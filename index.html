@@ -119,6 +119,50 @@
     </div>
   </section>
 
+  <!-- BULK TRANSFER APP -->
+  <section class="bulk-section" id="bulk-transfer" style="padding: 4rem 2rem; background: var(--bg2); border-top: 1px solid var(--border);">
+    <div class="container">
+      <div class="bulk-header" style="text-align: center;">
+        <h2 class="section-title" style="margin-bottom: 1rem;">Fast Bulk Transfer</h2>
+        <p class="drop-sub" style="margin-bottom: 3rem;">Group your original files and download them together in a single ZIP. Zero uploads, lightning fast.</p>
+      </div>
+
+      <!-- BULK DROP ZONE -->
+      <div class="drop-zone bulk-drop-zone" id="bulk-drop-zone" style="border-color: rgba(240,60,140,0.2);" ondragover="handleBulkDrag(event,true)" ondragleave="handleBulkDrag(event,false)" ondrop="handleBulkDrop(event)">
+        <div class="drop-icon" style="color: #f03c8c;">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M20 12v16M14 18l6-6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="drop-title">Drop files or folders to group</p>
+        <p class="drop-sub">Original files will be securely bundled instantly</p>
+        <div class="drop-actions">
+          <button class="upload-btn" style="background: #f03c8c; color: white;" onclick="document.getElementById('bulk-file-input').click()">Select Files</button>
+          <button class="upload-btn outline" style="border-color: rgba(240,60,140,0.3); color: #f03c8c;" onclick="document.getElementById('bulk-folder-input').click()">Select Folder</button>
+        </div>
+        <input type="file" id="bulk-file-input" multiple onchange="handleBulkFiles(this.files)" style="display:none;">
+        <input type="file" id="bulk-folder-input" webkitdirectory directory multiple onchange="handleBulkFiles(this.files)" style="display:none;">
+      </div>
+
+      <!-- BULK LIST -->
+      <div id="bulk-file-list" class="bulk-file-list hidden" style="margin-top: 1.5rem; background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span id="bulk-count" style="font-weight: 600; font-family: var(--font-display);">0 files selected</span>
+          <div style="display: flex; gap: 1rem;">
+            <button class="clear-all-btn" onclick="clearBulk()">Clear</button>
+            <button class="upload-btn bulk-submit-btn" id="bulk-submit-btn" style="background: #f03c8c; color: white;" onclick="generateBulkZip()">Generate ZIP Archive</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BULK RESULT -->
+      <div id="bulk-result" class="hidden" style="margin-top: 2rem;">
+        <button class="download-all-btn" id="bulk-download-btn" style="background: rgba(240,60,140,0.15); border-color: rgba(240,60,140,0.3); color: #f03c8c; box-shadow: 0 4px 20px rgba(240,60,140,0.1);">
+          Download Batch Archive (ZIP)
+        </button>
+      </div>
+
+    </div>
+  </section>
+
   <!-- HOW IT WORKS -->
   <section class="how-section" id="how">
     <div class="container">

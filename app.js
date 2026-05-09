@@ -367,3 +367,90 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   });
 });
+
+/* ─── BULK SERVER TRANSFER FEATURE ─── */
+let bulkFiles = [];
+
+function handleBulkDrag(e, on) {
+  e.preventDefault();
+  document.getElementById('bulk-drop-zone').classList.toggle('drag-over', on);
+}
+
+function handleBulkDrop(e) {
+  e.preventDefault();
+  handleBulkDrag(e, false);
+  handleBulkFiles(e.dataTransfer.files);
+}
+
+function handleBulkFiles(flist) {
+  Array.from(flist).forEach(f => {
+    if (f.name.startsWith('.') || f.size === 0) return;
+    if (!bulkFiles.find(x => x.name === f.name && x.size === f.size)) {
+      bulkFiles.push(f);
+    }
+  });
+  
+  const listEl = document.getElementById('bulk-file-list');
+  const countEl = document.getElementById('bulk-count');
+  const resultEl = document.getElementById('bulk-result');
+  
+  if (bulkFiles.length > 0) {
+    listEl.classList.remove('hidden');
+    resultEl.classList.add('hidden'); // hide previous result if any
+    countEl.textContent = `${bulkFiles.length} file${bulkFiles.length > 1 ? 's' : ''} selected`;
+  }
+}
+
+function clearBulk() {
+  bulkFiles = [];
+  document.getElementById('bulk-file-list').classList.add('hidden');
+  document.getElementById('bulk-result').classList.add('hidden');
+  document.getElementById('bulk-submit-btn').disabled = false;
+  document.getElementById('bulk-submit-btn').innerHTML = 'Generate ZIP Archive';
+}
+
+async function generateBulkZip() {
+  if (bulkFiles.length === 0) return;
+  
+  const btn = document.getElementById('bulk-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 18 18" fill="none" style="animation:spin .8s linear infinite; margin-right: 6px;"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" stroke-dasharray="22" stroke-dashoffset="8"/></svg> Generating ZIP...`;
+  
+  // Load JSZip if not loaded
+  if (typeof JSZip === 'undefined') {
+    await new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      script.onload = resolve;
+      document.head.appendChild(script);
+    });
+  }
+
+  try {
+    const zip = new JSZip();
+    for (const file of bulkFiles) {
+      zip.file(file.name, file);
+    }
+    
+    const out = await zip.generateAsync({ type: 'blob' });
+    
+    btn.innerHTML = '✓ ZIP Generated';
+    
+    const resultEl = document.getElementById('bulk-result');
+    const downloadBtn = document.getElementById('bulk-download-btn');
+    
+    downloadBtn.onclick = () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(out);
+      a.download = `bulk_transfer_${Date.now()}.zip`;
+      a.click();
+    };
+    
+    resultEl.classList.remove('hidden');
+    
+  } catch (err) {
+    console.error(err);
+    btn.innerHTML = 'Failed';
+    btn.disabled = false;
+  }
+}
