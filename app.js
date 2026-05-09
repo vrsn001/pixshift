@@ -75,6 +75,12 @@ function getExt(name) {
 
 function handleFiles(flist) {
   Array.from(flist).forEach(f => {
+    // Skip hidden/system files and non-visual files often found in folders
+    if (f.name.startsWith('.') || f.size === 0) return;
+    if (!f.type.startsWith('image/') && !f.type.startsWith('video/') && !f.name.match(/\.(heic|heif|tiff|bmp|avif|svg|gif)$/i)) {
+      return;
+    }
+
     if (!files.find(x => x.name === f.name && x.size === f.size)) {
       files.push(f);
     }
@@ -209,6 +215,14 @@ async function convertAll() {
       <path d="M13 5.5l2.24 1.26M13 5.5V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
     Convert to WebP`;
+
+  // Auto-scroll to download all button if it exists
+  const allBtn = document.querySelector('.download-all-btn');
+  if (allBtn) {
+    setTimeout(() => {
+      allBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
 }
 
 function convertImage(file, res, quality, ctx, cvs, onProg) {

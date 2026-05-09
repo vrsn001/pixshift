@@ -328,7 +328,43 @@ nav {
 }
 .drop-sub u { text-decoration-color: var(--accent); color: var(--accent); }
 
-#file-input { display: none; }
+#file-input, #folder-input { display: none; }
+
+.drop-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.upload-btn {
+  background: var(--accent);
+  color: #0a0a0b;
+  border: none;
+  padding: .65rem 1.5rem;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all .2s;
+}
+.upload-btn:hover {
+  background: #d4f54a;
+  transform: translateY(-1px);
+}
+
+.upload-btn.outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-hover);
+}
+.upload-btn.outline:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.25);
+}
 
 /* File Cards */
 #file-list { margin-top: 1.25rem; display: flex; flex-direction: column; gap: .6rem; }
@@ -701,19 +737,25 @@ input[type="range"]::-webkit-slider-thumb:hover {
   align-items: center;
   justify-content: center;
   gap: .6rem;
-  padding: .85rem 1.5rem;
+  padding: 1rem 1.5rem;
   border-radius: var(--radius);
-  background: var(--bg3);
-  border: 1px solid var(--border-hover);
-  color: var(--text);
-  font-size: 15px;
-  font-weight: 600;
+  background: rgba(200,240,60,0.15);
+  border: 1px solid rgba(200,240,60,0.3);
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 700;
   font-family: var(--font-display);
   letter-spacing: -0.01em;
-  margin-top: .75rem;
-  transition: all .15s;
+  margin-top: 1.5rem;
+  transition: all .2s;
+  box-shadow: 0 4px 20px rgba(200,240,60,0.1);
 }
-.download-all-btn:hover { background: rgba(255,255,255,0.05); border-color: rgba(200,240,60,0.3); color: var(--accent); }
+.download-all-btn:hover {
+  background: rgba(200,240,60,0.25);
+  border-color: rgba(200,240,60,0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(200,240,60,0.15);
+}
 
 /* ─── How It Works ─── */
 .how-section {
