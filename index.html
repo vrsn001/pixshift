@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixshift — Convert Anything to WebP</title>
+  <meta name="description" content="Convert any image or video to WebP format. Free, fast, private — runs entirely in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" class="logo">Pix<span>shift</span></a>
+    <div class="nav-right">
+      <a href="#how" class="nav-link">How it works</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+      <a href="https://github.com" class="nav-cta" target="_blank">GitHub ↗</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+      <div class="grid-overlay"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        100% browser-based · Zero uploads · Free forever
+      </div>
+      <h1>Convert <em>anything</em><br>to WebP.</h1>
+      <p class="hero-sub">Drop your images and videos. Get back razor-sharp WebP files at any resolution — no servers, no accounts, no data leaving your device.</p>
+      <div class="hero-formats">
+        <span>JPG</span><span>PNG</span><span>GIF</span><span>MP4</span><span>MOV</span><span>AVIF</span><span>TIFF</span><span>BMP</span><span>SVG</span><span>WebM</span><span>+ more</span>
+      </div>
+    </div>
+    <div class="scroll-hint">
+      <span>Drop files below</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M4 9l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  </section>
+
+  <!-- CONVERTER APP -->
+  <section class="converter-section" id="converter">
+    <div class="container">
+
+      <!-- DROP ZONE -->
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDrag(event,true)" ondragleave="handleDrag(event,false)" ondrop="handleDrop(event)">
+        <div class="drop-icon">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="32" height="32" rx="8" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M20 13v14M14 19l6-6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="drop-title">Drop files here</p>
+        <p class="drop-sub">or <u>click to browse</u> — images, videos, any format</p>
+        <input type="file" id="file-input" multiple accept="image/*,video/*,.heic,.heif,.tiff,.bmp,.avif,.svg,.gif" onchange="handleFiles(this.files)">
+      </div>
+
+      <!-- FILE LIST -->
+      <div id="file-list"></div>
+
+      <!-- OPTIONS PANEL -->
+      <div id="options-panel" class="options-panel hidden">
+
+        <div class="options-header">
+          <div>
+            <h2 class="options-title">Conversion settings</h2>
+            <p class="options-sub">Applied to all files in the queue</p>
+          </div>
+          <button class="clear-all-btn" onclick="clearAll()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Clear all
+          </button>
+        </div>
+
+        <div class="settings-grid">
+
+          <!-- Resolution -->
+          <div class="setting-block">
+            <label class="setting-label">Output resolution</label>
+            <div class="res-grid" id="res-grid"></div>
+          </div>
+
+          <!-- Quality -->
+          <div class="setting-block">
+            <label class="setting-label">WebP quality <span id="q-label" class="quality-tag">92 — Near lossless</span></label>
+            <div class="slider-wrap">
+              <span class="slider-end">10</span>
+              <input type="range" id="quality-slider" min="10" max="100" step="1" value="92" oninput="updateQuality(this.value)">
+              <span class="slider-end">100</span>
+            </div>
+            <div class="quality-marks">
+              <span>Smallest file</span>
+              <span>Best quality</span>
+            </div>
+          </div>
+
+        </div>
+
+        <button class="convert-btn" id="convert-btn" onclick="convertAll()">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9a6 6 0 0 1 6-6 6 6 0 0 1 4.24 1.76M15 9a6 6 0 0 1-6 6 6 6 0 0 1-4.24-1.76" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M13 5.5l2.24 1.26M13 5.5V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Convert to WebP
+        </button>
+      </div>
+
+      <!-- RESULTS -->
+      <div id="results"></div>
+
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-section" id="how">
+    <div class="container">
+      <div class="section-tag">Process</div>
+      <h2 class="section-title">How it works</h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <h3>Drop your files</h3>
+          <p>Drag & drop or click to upload images and videos in any format — JPG, PNG, MP4, MOV, GIF, TIFF, AVIF, BMP, SVG, and more.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <h3>Pick your settings</h3>
+          <p>Choose from 10 output resolutions (original up to 4K) and dial in your quality level. Aspect ratios are always preserved.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <h3>Convert & download</h3>
+          <p>Click convert. Files are processed directly in your browser using the Canvas API. Download individually or grab all as a ZIP.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features-section">
+    <div class="container">
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="2" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.5"/><path d="M7 11l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h4>Zero data leaves your device</h4>
+          <p>Conversion happens entirely in your browser via the Canvas API. No servers. No uploads. No logs. Complete privacy.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M11 7v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h4>Instant processing</h4>
+          <p>No waiting for uploads or server queues. Conversion runs in real-time using your device's GPU acceleration through the Canvas API.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 6h14M4 11h10M4 16h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h4>Batch conversion</h4>
+          <p>Upload and convert dozens of files at once. Each file is processed independently with its own progress indicator.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l2.5 5.5H19l-4.5 3.5 1.5 6L11 14l-5 3 1.5-6L3 7.5h5.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          </div>
+          <h4>Lossless quality option</h4>
+          <p>Set quality to 100 for near-lossless output. WebP achieves up to 30% smaller files than JPEG at equivalent visual quality.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="5" width="18" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M7 5V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.5"/><path d="M8 12l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h4>Video frame extraction</h4>
+          <p>Upload MP4, MOV, AVI, WebM, or MKV files. Pixshift extracts a high-quality frame and converts it to a crisp WebP still.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 16l4-4 3 3 4-5 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="2" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/></svg>
+          </div>
+          <h4>10 resolution presets</h4>
+          <p>From 320×240 all the way to 4K UHD. Or keep the original resolution with perfect aspect ratio preservation at every size.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq-section" id="faq">
+    <div class="container faq-container">
+      <div class="section-tag">FAQ</div>
+      <h2 class="section-title">Questions & answers</h2>
+      <div class="faq-list" id="faq-list">
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            What formats can I convert from?
+            <svg class="faq-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">JPG, JPEG, PNG, GIF, BMP, TIFF, AVIF, HEIC, SVG, WebP (re-encode), and video formats including MP4, MOV, AVI, WebM, and MKV. For video files, a representative frame is extracted and converted.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            Is my data safe? Does anything get uploaded?
+            <svg class="faq-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">Absolutely nothing is uploaded. Conversion runs entirely using the HTML5 Canvas API inside your browser tab. Files never leave your device. There are no servers, no analytics on your files, and no logs.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            What quality setting should I use?
+            <svg class="faq-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">For most use cases, 80–92 is the sweet spot — visually indistinguishable from the original at significantly smaller file sizes. Use 60–75 for web thumbnails where file size matters most. Use 95–100 for archival or print-quality output.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            Why WebP? What's the advantage?
+            <svg class="faq-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">WebP is a modern image format developed by Google that provides superior lossless and lossy compression. WebP images are typically 25–34% smaller than comparable JPEGs and 26% smaller than PNGs. It supports transparency (like PNG) and animation (like GIF). All major browsers have supported WebP since 2020.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            Are there file size or quantity limits?
+            <svg class="faq-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">No hard limits — you're only limited by your device's available RAM and GPU memory. Very large files (100MB+) or 4K video may take a moment depending on your hardware. For very large batches, we recommend converting in groups of 20–30.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            Does it preserve transparency?
+            <svg class="faq-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">Yes. PNG and other files with alpha channels will retain transparency in the output WebP file. WebP fully supports alpha channel transparency, making it a great drop-in replacement for PNG in most web contexts.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container footer-inner">
+      <a href="/" class="logo">Pix<span>shift</span></a>
+      <p class="footer-copy">Built with the Canvas API. Runs in your browser. Free forever.</p>
+      <p class="footer-legal">No files uploaded. No tracking. No nonsense.</p>
+    </div>
+  </footer>
+
+  <canvas id="cvs" style="display:none"></canvas>
+  <script src="app.js"></script>
+</body>
+</html>
