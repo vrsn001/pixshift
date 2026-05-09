@@ -225,13 +225,28 @@ async function convertAll() {
   }
 }
 
-function convertImage(file, res, quality, ctx, cvs, onProg) {
+async function convertImage(file, res, quality, ctx, cvs, onProg) {
+  let fileToLoad = file;
+
+  // If Apple HEIC/HEIF format, decode to JPEG blob first
+  if (file.name.toLowerCase().match(/\.(heic|heif)$/) || file.type.match(/image\/(heic|heif)/)) {
+    try {
+      onProg(15); // Show some progress for decoding
+      const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+      fileToLoad = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+      onProg(30);
+    } catch (err) {
+      console.error('HEIC Decode Error:', err);
+      throw new Error('Failed to decode HEIC file');
+    }
+  }
+
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(fileToLoad);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      onProg(40);
+      onProg(50);
       let [w, h] = resize(img.naturalWidth, img.naturalHeight, res);
       cvs.width = w; cvs.height = h;
       ctx.clearRect(0, 0, w, h);
@@ -239,7 +254,7 @@ function convertImage(file, res, quality, ctx, cvs, onProg) {
       onProg(80);
       cvs.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/webp', quality);
     };
-    img.onerror = reject;
+    img.onerror = () => reject(new Error('Image failed to load in canvas'));
     img.src = url;
   });
 }
