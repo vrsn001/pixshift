@@ -11,7 +11,7 @@ interface FaqItem {
 const FAQS: FaqItem[] = [
   {
     q: "Do my files ever get uploaded to a server?",
-    a: "Never. Pixshift operates 100% locally on your computer inside your browser using WebAssembly (FFmpeg, Libheif) and the HTML5 Canvas API. Your files never touch external servers or cloud storage.",
+    a: "Never. Pixshift operates 100% locally on your computer inside your browser using WebAssembly and the Canvas API. Your files never touch external servers or cloud storage.",
   },
   {
     q: "Is there any file size limit or daily quota?",
@@ -19,7 +19,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: "How are video and audio files converted client-side?",
-    a: "We package WebAssembly-compiled FFmpeg into dedicated Web Workers. This enables full-featured video transcoding (MP4, WebM, GIF) and audio extraction (MP3, WAV, AAC) directly on your CPU without freezing the tab.",
+    a: "Pixshift runs a WebAssembly build of FFmpeg directly in the browser, handling video transcoding (MP4, WebM, GIF) and audio extraction (MP3, WAV, AAC) on your device without server uploads.",
   },
   {
     q: "Can I convert multiple images into a single PDF document?",

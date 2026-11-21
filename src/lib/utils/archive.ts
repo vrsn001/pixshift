@@ -6,8 +6,21 @@ export interface FileToZip {
   folder?: string;
 }
 
+// File extensions that are already compressed — STORE saves CPU with no size gain
+const ALREADY_COMPRESSED = new Set([
+  "mp4", "webm", "mkv", "avi", "mov", "mp3", "aac", "ogg", "m4a",
+  "flac", "wav", "gif", "jpg", "jpeg", "webp", "avif", "heic", "heif",
+  "zip", "gz", "br", "zst",
+]);
+
+function getExtension(name: string): string {
+  const parts = name.split(".");
+  return parts.length > 1 ? parts.pop()!.toLowerCase() : "";
+}
+
 /**
- * Bundles multiple blobs into a single compressed .zip file
+ * Bundles multiple blobs into a single .zip file.
+ * Uses STORE for already-compressed formats to avoid wasting CPU on re-compression.
  */
 export async function createZipArchive(
   files: FileToZip[],
@@ -16,10 +29,13 @@ export async function createZipArchive(
   const zip = new JSZip();
 
   files.forEach((file) => {
+    const ext = getExtension(file.name);
+    const isPreCompressed = ALREADY_COMPRESSED.has(ext);
+
     if (file.folder) {
-      zip.folder(file.folder)?.file(file.name, file.blob);
+      zip.folder(file.folder)?.file(file.name, file.blob, isPreCompressed ? { compression: "STORE" } : undefined);
     } else {
-      zip.file(file.name, file.blob);
+      zip.file(file.name, file.blob, isPreCompressed ? { compression: "STORE" } : undefined);
     }
   });
 

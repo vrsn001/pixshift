@@ -103,7 +103,7 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
       {/* Main Text */}
       <div className="space-y-1.5">
         <h2 className="font-display text-2xl font-bold tracking-tight text-[#f0efe9]">
-          Drop your files below
+          Drop your files here
         </h2>
         <p className="text-xs text-[#9a9992]">
           or <span className="text-[#c8f03c] font-semibold underline underline-offset-4">browse files</span> from your computer · Zero uploads to external servers

@@ -12,7 +12,7 @@ export function Footer() {
               Pixy<span className="text-[#c8f03c]">shift</span>
             </span>
             <p className="text-xs text-[#9a9992] mt-2 leading-relaxed">
-              The universal, privacy-first in-browser conversion studio. Convert images, videos, audio, and documents locally with WebAssembly power.
+              Free, private, in-browser file converter. Images, videos, audio, and documents — all converted locally on your device.
             </p>
           </div>
 
@@ -26,7 +26,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Zap className="w-3.5 h-3.5 text-[#c8f03c]" />
-                <span>No queue wait times or upload bandwidth caps</span>
+                <span>Instant — no waiting in line, no size restrictions</span>
               </li>
               <li className="flex items-center gap-2">
                 <Cpu className="w-3.5 h-3.5 text-[#f03c8c]" />

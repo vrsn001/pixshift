@@ -2,38 +2,60 @@ import { ConversionSettings } from "@/types/converter";
 
 let ffmpegInstance: any = null;
 let isLoaded = false;
+let loadingPromise: Promise<any> | null = null;
 
 /**
- * Lazily loads and initializes FFmpeg WebAssembly instance
+ * Lazily loads and initializes FFmpeg WebAssembly instance.
+ * Deduplicates concurrent load requests so multiple callers share one download.
  */
 export async function getFFmpegInstance(onLog?: (msg: string) => void) {
   if (ffmpegInstance && isLoaded) {
     return ffmpegInstance;
   }
 
-  const { FFmpeg } = await import("@ffmpeg/ffmpeg");
-  const { toBlobURL } = await import("@ffmpeg/util");
-
-  const ffmpeg = new FFmpeg();
-
-  if (onLog) {
-    ffmpeg.on("log", ({ message }) => onLog(message));
+  // Deduplicate: if already loading, wait for the same promise
+  if (loadingPromise) {
+    return loadingPromise;
   }
 
-  // Load WASM binaries from unpkg
-  const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
-  try {
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-    });
-    isLoaded = true;
-    ffmpegInstance = ffmpeg;
-    return ffmpeg;
-  } catch (err) {
-    console.warn("Failed to load multi-threaded FFmpeg, falling back or checking error:", err);
-    throw new Error("Could not initialize FFmpeg WebAssembly. Ensure your browser supports WebAssembly.");
-  }
+  loadingPromise = (async () => {
+    const { FFmpeg } = await import("@ffmpeg/ffmpeg");
+    const { toBlobURL } = await import("@ffmpeg/util");
+
+    const ffmpeg = new FFmpeg();
+
+    if (onLog) {
+      ffmpeg.on("log", ({ message }: { message: string }) => onLog(message));
+    }
+
+    // Load WASM binaries from unpkg
+    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
+    try {
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+      });
+      isLoaded = true;
+      ffmpegInstance = ffmpeg;
+      return ffmpeg;
+    } catch (err) {
+      loadingPromise = null; // Allow retry on failure
+      console.warn("Failed to load FFmpeg:", err);
+      throw new Error("Could not initialize FFmpeg WebAssembly. Ensure your browser supports WebAssembly.");
+    }
+  })();
+
+  return loadingPromise;
+}
+
+/**
+ * Preloads FFmpeg WASM in the background.
+ * Call when the user first drops a video/audio file to front-load the ~25 MB download.
+ */
+export function preloadFFmpeg(): void {
+  getFFmpegInstance().catch(() => {
+    // Silently fail on preload — will retry on actual conversion
+  });
 }
 
 /**

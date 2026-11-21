@@ -23,7 +23,7 @@ export function Header() {
       {/* Center Badge */}
       <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs text-[#9a9992]">
         <span className="w-1.5 h-1.5 rounded-full bg-[#c8f03c] shadow-[0_0_8px_#c8f03c] animate-pulse" />
-        <span>100% browser-based · Zero uploads · Free forever</span>
+        <span>All processing stays on your device</span>
       </div>
 
       {/* Nav Right */}

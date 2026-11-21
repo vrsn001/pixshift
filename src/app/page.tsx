@@ -10,7 +10,7 @@ import { Faq } from "@/components/Faq";
 import { ConversionJob, ConversionSettings, SupportedFormat, OutputFile } from "@/types/converter";
 import { detectFileInfo } from "@/lib/converters/detector";
 import { convertImage } from "@/lib/converters/imageConverter";
-import { transcodeMedia } from "@/lib/converters/mediaConverter";
+import { transcodeMedia, preloadFFmpeg } from "@/lib/converters/mediaConverter";
 import { mergeImagesToPdf, extractPdfToImages } from "@/lib/converters/documentConverter";
 import { createZipArchive, triggerDownload, FileToZip } from "@/lib/utils/archive";
 import { Shield, Zap, Infinity } from "lucide-react";
@@ -44,6 +44,11 @@ export default function Home() {
     });
 
     setJobs((prev) => [...prev, ...newJobs]);
+
+    // Preload FFmpeg when video/audio files are added
+    if (newJobs.some((j) => j.category === "video" || j.category === "audio")) {
+      preloadFFmpeg();
+    }
   };
 
   const handleUpdateFormat = (id: string, format: SupportedFormat) => {
@@ -141,11 +146,7 @@ export default function Home() {
 
     const queueToProcess = jobs.filter((j) => j.status === "pending" || j.status === "error");
 
-    for (const job of queueToProcess) {
-      if (mergeToPdf && job.category === "image" && job.targetFormat === "pdf") {
-        continue;
-      }
-
+    const processJob = async (job: ConversionJob) => {
       setJobs((prev) => prev.map((item) => (item.id === job.id ? { ...item, status: "processing", progress: 5 } : item)));
       const startTime = Date.now();
 
@@ -203,6 +204,26 @@ export default function Home() {
           )
         );
       }
+    };
+
+    // Split into parallelizable image jobs and sequential media/document jobs
+    const imageJobs = queueToProcess.filter(
+      (j) => j.category === "image" && !(mergeToPdf && j.targetFormat === "pdf")
+    );
+    const sequentialJobs = queueToProcess.filter(
+      (j) => j.category !== "image"
+    );
+
+    // Process image conversions in parallel batches of 3
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < imageJobs.length; i += BATCH_SIZE) {
+      const batch = imageJobs.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch.map(processJob));
+    }
+
+    // Process video/audio/document jobs sequentially (FFmpeg is single-instance)
+    for (const job of sequentialJobs) {
+      await processJob(job);
     }
 
     setIsConverting(false);
@@ -252,7 +273,7 @@ export default function Home() {
           </h1>
 
           <p className="text-sm sm:text-base text-[#9a9992] max-w-lg mx-auto font-light leading-relaxed">
-            Drop your images, videos, audio, or PDFs. Razor-sharp conversion directly on your device — no servers, no accounts, zero data leaks.
+            Drop your images, videos, audio, or PDFs. Everything converts on your device in seconds — your files never leave the browser.
           </p>
         </div>
 
@@ -290,7 +311,7 @@ export default function Home() {
             </div>
             <h3 className="font-display text-sm font-bold text-[#f0efe9]">Absolute Privacy</h3>
             <p className="text-xs text-[#9a9992] leading-relaxed">
-              Your files never leave your device. Processing executes strictly within your browser sandbox.
+              Your files never leave your device. All conversion happens inside your browser — nothing is uploaded anywhere.
             </p>
           </div>
 
@@ -298,9 +319,9 @@ export default function Home() {
             <div className="w-8 h-8 rounded-lg bg-[#c8f03c]/10 border border-[#c8f03c]/20 flex items-center justify-center text-[#c8f03c]">
               <Zap className="w-4 h-4" />
             </div>
-            <h3 className="font-display text-sm font-bold text-[#f0efe9]">Hardware Accelerated</h3>
+            <h3 className="font-display text-sm font-bold text-[#f0efe9]">Native Speed</h3>
             <p className="text-xs text-[#9a9992] leading-relaxed">
-              Powered by multi-threaded WebAssembly & OffscreenCanvas for ultra-fast conversion speeds.
+              Uses compiled native code (WebAssembly) running directly on your hardware — conversions finish in seconds, not minutes.
             </p>
           </div>
 
@@ -310,7 +331,7 @@ export default function Home() {
             </div>
             <h3 className="font-display text-sm font-bold text-[#f0efe9]">Unlimited & Free</h3>
             <p className="text-xs text-[#9a9992] leading-relaxed">
-              No daily credit caps, no 10MB limits, and no subscriptions. Convert as many files as you want.
+              Convert as many files as you want, any size, forever. No account needed.
             </p>
           </div>
         </div>

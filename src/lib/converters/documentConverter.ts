@@ -1,7 +1,8 @@
 import { PDFDocument } from "pdf-lib";
 
 /**
- * Merges an array of image files into a single multi-page PDF document
+ * Merges an array of image files into a single multi-page PDF document.
+ * Pre-decodes all images in parallel for faster processing.
  */
 export async function mergeImagesToPdf(
   files: File[],
@@ -10,28 +11,35 @@ export async function mergeImagesToPdf(
   const pdfDoc = await PDFDocument.create();
   const total = files.length;
 
+  // Pre-decode all images in parallel using createImageBitmap
+  const bitmaps = await Promise.all(files.map((f) => createImageBitmap(f)));
+  onProgress?.(30);
+
   for (let i = 0; i < total; i++) {
     const file = files[i];
-    const arrayBuffer = await file.arrayBuffer();
+    const bitmap = bitmaps[i];
     const ext = file.name.split(".").pop()?.toLowerCase() || "";
 
     let image;
     if (ext === "png") {
+      const arrayBuffer = await file.arrayBuffer();
       image = await pdfDoc.embedPng(arrayBuffer);
     } else if (ext === "jpg" || ext === "jpeg") {
+      const arrayBuffer = await file.arrayBuffer();
       image = await pdfDoc.embedJpg(arrayBuffer);
     } else {
-      // For WebP, AVIF, BMP, convert to PNG first via canvas
-      const bmp = await createImageBitmap(file);
+      // For WebP, AVIF, BMP, etc. — render bitmap to canvas and export as PNG
       const canvas = document.createElement("canvas");
-      canvas.width = bmp.width;
-      canvas.height = bmp.height;
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
       const ctx = canvas.getContext("2d");
-      ctx?.drawImage(bmp, 0, 0);
+      ctx?.drawImage(bitmap, 0, 0);
       const pngBlob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), "image/png"));
       const pngBuffer = await pngBlob.arrayBuffer();
       image = await pdfDoc.embedPng(pngBuffer);
     }
+
+    bitmap.close(); // Free memory
 
     const page = pdfDoc.addPage([image.width, image.height]);
     page.drawImage(image, {
@@ -41,7 +49,7 @@ export async function mergeImagesToPdf(
       height: image.height,
     });
 
-    onProgress?.(Math.round(((i + 1) / total) * 90));
+    onProgress?.(Math.round(30 + ((i + 1) / total) * 60));
   }
 
   const pdfBytes = await pdfDoc.save();
@@ -50,7 +58,8 @@ export async function mergeImagesToPdf(
 }
 
 /**
- * Extracts all pages of a PDF into individual PNG or JPEG images
+ * Extracts all pages of a PDF into individual PNG or JPEG images.
+ * Processes pages in parallel batches of 4 for faster extraction.
  */
 export async function extractPdfToImages(
   file: File,
@@ -58,10 +67,10 @@ export async function extractPdfToImages(
   onProgress?: (pct: number) => void
 ): Promise<{ name: string; blob: Blob }[]> {
   const arrayBuffer = await file.arrayBuffer();
-  
+
   // Dynamically import pdfjs-dist
   const pdfjsLib = await import("pdfjs-dist");
-  
+
   // Configure PDF.js worker
   if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -70,43 +79,55 @@ export async function extractPdfToImages(
   const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
   const pdf = await loadingTask.promise;
   const numPages = pdf.numPages;
-  const results: { name: string; blob: Blob }[] = [];
+  const results: ({ name: string; blob: Blob } | null)[] = new Array(numPages).fill(null);
 
   const baseName = file.name.replace(/\.[^/.]+$/, "");
+  const mimeType = targetFormat === "jpeg" ? "image/jpeg" : "image/png";
 
-  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-    const viewport = page.getViewport({ scale: 2.0 });
+  // Process pages in parallel batches of 4
+  const BATCH_SIZE = 4;
+  let completed = 0;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext("2d");
+  for (let batchStart = 0; batchStart < numPages; batchStart += BATCH_SIZE) {
+    const batchEnd = Math.min(batchStart + BATCH_SIZE, numPages);
+    const pageNumbers = Array.from({ length: batchEnd - batchStart }, (_, i) => batchStart + i + 1);
 
-    if (ctx) {
-      if (targetFormat === "jpeg") {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
+    await Promise.all(
+      pageNumbers.map(async (pageNum) => {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 2.0 });
 
-      await page.render({
-        canvasContext: ctx,
-        viewport,
-      }).promise;
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d");
 
-      const mimeType = targetFormat === "jpeg" ? "image/jpeg" : "image/png";
-      const blob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((b) => resolve(b!), mimeType, 0.95);
-      });
+        if (ctx) {
+          if (targetFormat === "jpeg") {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
 
-      results.push({
-        name: `${baseName}_page_${pageNum}.${targetFormat}`,
-        blob,
-      });
-    }
+          await page.render({
+            canvasContext: ctx,
+            viewport,
+          }).promise;
 
-    onProgress?.(Math.round((pageNum / numPages) * 100));
+          const blob = await new Promise<Blob>((resolve) => {
+            canvas.toBlob((b) => resolve(b!), mimeType, 0.95);
+          });
+
+          results[pageNum - 1] = {
+            name: `${baseName}_page_${pageNum}.${targetFormat}`,
+            blob,
+          };
+        }
+
+        completed++;
+        onProgress?.(Math.round((completed / numPages) * 100));
+      })
+    );
   }
 
-  return results;
+  return results.filter((r): r is { name: string; blob: Blob } => r !== null);
 }
