@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { UploadCloud, FileImage, FileVideo, FileAudio, FileText, Plus } from "lucide-react";
+import { UploadCloud, Plus } from "lucide-react";
 
 interface DropZoneProps {
   onFilesAdded: (files: File[]) => void;
@@ -12,7 +12,6 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Handle Drag events
   const handleDrag = (e: React.DragEvent, state: boolean) => {
     e.preventDefault();
     e.stopPropagation();
@@ -29,7 +28,7 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
     }
   };
 
-  // Handle clipboard paste of files / screenshots
+  // Clipboard paste support
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       if (e.clipboardData?.files && e.clipboardData.files.length > 0) {
@@ -41,7 +40,6 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
   }, [onFilesAdded]);
 
   if (hasFiles) {
-    // Compact Add Files button when queue already has items
     return (
       <div className="w-full">
         <input
@@ -62,12 +60,12 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
           onDrop={handleDrop}
           className={`w-full py-4 px-6 rounded-2xl border-2 border-dashed flex items-center justify-center gap-3 text-xs font-semibold transition-all ${
             isDragOver
-              ? "border-cyan-400 bg-cyan-500/10 text-cyan-300"
-              : "border-white/[0.1] bg-slate-900/40 hover:bg-slate-900/80 hover:border-cyan-500/30 text-slate-400 hover:text-slate-200"
+              ? "border-[#c8f03c] bg-[#c8f03c]/10 text-[#c8f03c] shadow-[0_0_25px_rgba(200,240,60,0.2)]"
+              : "border-white/[0.1] bg-[#111113] hover:bg-[#18181b] hover:border-[#c8f03c]/50 text-[#9a9992] hover:text-[#f0efe9]"
           }`}
         >
-          <Plus className="w-4 h-4 text-cyan-400" />
-          <span>Drop more files here or click to add (or paste with Ctrl+V)</span>
+          <Plus className="w-4 h-4 text-[#c8f03c]" />
+          <span>Drop more files here or click to browse (or paste with Ctrl+V)</span>
         </button>
       </div>
     );
@@ -79,10 +77,10 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
       onDragLeave={(e) => handleDrag(e, false)}
       onDrop={handleDrop}
       onClick={() => inputRef.current?.click()}
-      className={`relative w-full rounded-3xl border-2 border-dashed p-12 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-4 ${
+      className={`relative w-full rounded-3xl border-2 border-dashed p-14 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-5 ${
         isDragOver
-          ? "border-cyan-400 bg-cyan-500/10 scale-[1.01] shadow-2xl shadow-cyan-500/20"
-          : "border-white/[0.12] bg-slate-900/50 hover:bg-slate-900/80 hover:border-cyan-500/40 glass-panel"
+          ? "border-[#c8f03c] bg-[#c8f03c]/10 scale-[1.01] shadow-[0_0_40px_rgba(200,240,60,0.25)]"
+          : "border-white/[0.1] bg-[#111113]/90 hover:bg-[#18181b] hover:border-[#c8f03c]/40"
       }`}
     >
       <input
@@ -97,38 +95,39 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
       />
 
       {/* Center Icon */}
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-xl shadow-cyan-500/10">
+      <div className="w-16 h-16 rounded-2xl bg-[#c8f03c]/10 border border-[#c8f03c]/30 flex items-center justify-center text-[#c8f03c] shadow-[0_0_20px_rgba(200,240,60,0.15)]">
         <UploadCloud className="w-8 h-8" />
       </div>
 
       {/* Main Text */}
-      <div className="space-y-1">
-        <h2 className="text-xl font-bold tracking-tight text-white">
-          Drop your files here to start
+      <div className="space-y-1.5">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-[#f0efe9]">
+          Drop your files below
         </h2>
-        <p className="text-xs text-slate-400">
-          or <span className="text-cyan-400 font-semibold underline underline-offset-2">browse files</span> from your computer · Clipboard paste (Ctrl+V) supported
+        <p className="text-xs text-[#9a9992]">
+          or <span className="text-[#c8f03c] font-semibold underline underline-offset-4">browse files</span> from your computer · Zero uploads to external servers
         </p>
       </div>
 
-      {/* Format badges */}
-      <div className="flex flex-wrap items-center justify-center gap-2 pt-2 max-w-lg">
-        <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-slate-300">
-          <FileImage className="w-3 h-3 text-cyan-400" />
-          <span>WebP, PNG, JPG, AVIF, HEIC, SVG</span>
-        </span>
-        <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-slate-300">
-          <FileVideo className="w-3 h-3 text-violet-400" />
-          <span>MP4, WebM, MKV, GIF, AVI</span>
-        </span>
-        <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-slate-300">
-          <FileAudio className="w-3 h-3 text-emerald-400" />
-          <span>MP3, WAV, OGG, AAC</span>
-        </span>
-        <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-slate-300">
-          <FileText className="w-3 h-3 text-amber-400" />
-          <span>PDF Documents</span>
-        </span>
+      {/* Format pills */}
+      <div className="flex flex-wrap items-center justify-center gap-1.5 pt-2 max-w-xl">
+        {["JPG", "PNG", "GIF", "MP4", "MOV", "AVIF", "WEBP", "MP3", "WAV", "HEIC", "PDF", "+ more"].map(
+          (fmt, idx, arr) => {
+            const isLast = idx === arr.length - 1;
+            return (
+              <span
+                key={fmt}
+                className={`text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-md border text-center transition-all ${
+                  isLast
+                    ? "bg-[#c8f03c]/10 border-[#c8f03c]/40 text-[#c8f03c]"
+                    : "bg-white/[0.04] border-white/[0.07] text-[#9a9992] hover:bg-[#c8f03c]/10 hover:border-[#c8f03c]/40 hover:text-[#c8f03c]"
+                }`}
+              >
+                {fmt}
+              </span>
+            );
+          }
+        )}
       </div>
     </div>
   );

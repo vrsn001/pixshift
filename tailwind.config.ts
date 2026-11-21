@@ -10,31 +10,40 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#090d16",
-        surface: {
-          50: "#131a29",
-          100: "#182236",
-          200: "#1f2d47",
-          300: "#2a3d5e",
+        bg: {
+          DEFAULT: "#0a0a0b",
+          secondary: "#111113",
+          card: "#18181b",
         },
-        accent: {
-          cyan: "#06b6d4",
-          violet: "#8b5cf6",
-          emerald: "#10b981",
+        text: {
+          DEFAULT: "#f0efe9",
+          secondary: "#9a9992",
+          muted: "#5a5952",
+        },
+        acid: {
+          DEFAULT: "#c8f03c",
+          dark: "#9bbf2a",
+          glow: "rgba(200, 240, 60, 0.15)",
+          pink: "#f03c8c",
         },
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "Inter", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "monospace"],
+        display: ["var(--font-syne)", "Syne", "sans-serif"],
+        body: ["var(--font-dm-sans)", "DM Sans", "sans-serif"],
       },
       animation: {
-        "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "fade-in": "fadeIn 0.25s ease-out forwards",
+        "float-1": "float1 14s ease-in-out infinite",
+        "float-2": "float2 18s ease-in-out infinite reverse",
+        "pulse-slow": "pulse 2s ease-in-out infinite",
       },
       keyframes: {
-        fadeIn: {
-          "0%": { opacity: "0", transform: "translateY(4px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
+        float1: {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "50%": { transform: "translate(25px, -15px) scale(1.04)" },
+        },
+        float2: {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "50%": { transform: "translate(-20px, 20px) scale(0.96)" },
         },
       },
     },

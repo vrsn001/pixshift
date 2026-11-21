@@ -13,14 +13,13 @@ import { convertImage } from "@/lib/converters/imageConverter";
 import { transcodeMedia } from "@/lib/converters/mediaConverter";
 import { mergeImagesToPdf, extractPdfToImages } from "@/lib/converters/documentConverter";
 import { createZipArchive, triggerDownload, FileToZip } from "@/lib/utils/archive";
-import { Sparkles, Shield, Zap, Infinity, ArrowRight } from "lucide-react";
+import { Shield, Zap, Infinity } from "lucide-react";
 
 export default function Home() {
   const [jobs, setJobs] = useState<ConversionJob[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [mergeToPdf, setMergeToPdf] = useState(false);
 
-  // Add files to conversion queue
   const handleFilesAdded = (files: File[]) => {
     const newJobs: ConversionJob[] = files.map((file) => {
       const info = detectFileInfo(file);
@@ -47,14 +46,12 @@ export default function Home() {
     setJobs((prev) => [...prev, ...newJobs]);
   };
 
-  // Update target format for a job
   const handleUpdateFormat = (id: string, format: SupportedFormat) => {
     setJobs((prev) =>
       prev.map((job) => (job.id === id ? { ...job, targetFormat: format, status: "pending", progress: 0 } : job))
     );
   };
 
-  // Update settings (optionally batch apply to all matching category)
   const handleUpdateSettings = (id: string, newSettings: ConversionSettings, applyToAll: boolean) => {
     setJobs((prev) => {
       const targetJob = prev.find((j) => j.id === id);
@@ -69,22 +66,18 @@ export default function Home() {
     });
   };
 
-  // Remove a job
   const handleRemoveJob = (id: string) => {
     setJobs((prev) => prev.filter((j) => j.id !== id));
   };
 
-  // Clear entire queue
   const handleClearAll = () => {
     setJobs([]);
     setMergeToPdf(false);
   };
 
-  // Execute conversions
   const handleConvertAll = async () => {
     setIsConverting(true);
 
-    // Case 1: Merge multiple images into a single PDF
     if (mergeToPdf) {
       const imagePdfJobs = jobs.filter(
         (j) => j.category === "image" && j.targetFormat === "pdf" && (j.status === "pending" || j.status === "error")
@@ -112,7 +105,6 @@ export default function Home() {
             size: pdfBlob.size,
           };
 
-          // Mark first job as done with the merged PDF, others as done
           setJobs((prev) =>
             prev.map((item) => {
               if (item.id === imagePdfJobs[0].id) {
@@ -147,11 +139,9 @@ export default function Home() {
       }
     }
 
-    // Case 2: Standard 1-to-1 conversions
     const queueToProcess = jobs.filter((j) => j.status === "pending" || j.status === "error");
 
     for (const job of queueToProcess) {
-      // If this was part of the merged PDF handled above, skip
       if (mergeToPdf && job.category === "image" && job.targetFormat === "pdf") {
         continue;
       }
@@ -218,7 +208,6 @@ export default function Home() {
     setIsConverting(false);
   };
 
-  // Download all completed files in a single .zip archive
   const handleDownloadZip = async () => {
     const filesToZip: FileToZip[] = [];
 
@@ -240,23 +229,30 @@ export default function Home() {
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col relative overflow-hidden">
+      {/* Background Ambience */}
+      <div className="hero-grid" aria-hidden="true" />
+      <div className="blob b1" aria-hidden="true" />
+      <div className="blob b2" aria-hidden="true" />
+      <div className="blob b3" aria-hidden="true" />
+
       <Header />
 
-      <main className="max-w-5xl mx-auto px-4 py-12 flex-1 w-full space-y-12">
+      <main className="max-w-4xl mx-auto px-4 pt-28 pb-16 flex-1 w-full space-y-12 relative z-10">
         {/* Hero Section */}
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-xs font-semibold text-cyan-300">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Universal File Conversion Studio</span>
+        <div className="text-center space-y-4 max-w-2xl mx-auto pt-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.09] text-xs text-[#9a9992]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c8f03c] shadow-[0_0_8px_#c8f03c] animate-pulse" />
+            <span>100% browser-based · Zero uploads · Free forever</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            Convert <span className="text-cyan-400">any file</span> to anything.
+          <h1 className="font-display text-4xl sm:text-6xl font-extrabold tracking-tight text-[#f0efe9] leading-[1.05]">
+            Convert <em className="not-italic text-[#c8f03c] relative inline-block underline decoration-[#c8f03c]/40 decoration-wavy decoration-2 underline-offset-8">any file</em><br />
+            to anything.
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
-            Drop images, videos, audio, or PDFs. Fast, razor-sharp conversion powered by in-browser WebAssembly — zero servers, zero uploads, 100% free forever.
+          <p className="text-sm sm:text-base text-[#9a9992] max-w-lg mx-auto font-light leading-relaxed">
+            Drop your images, videos, audio, or PDFs. Razor-sharp conversion directly on your device — no servers, no accounts, zero data leaks.
           </p>
         </div>
 
@@ -287,33 +283,33 @@ export default function Home() {
         </div>
 
         {/* Feature Pills */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-8">
-          <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/[0.06] glass-panel space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
+          <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.07] space-y-2 hover:border-[#c8f03c]/30 transition-colors">
+            <div className="w-8 h-8 rounded-lg bg-[#c8f03c]/10 border border-[#c8f03c]/20 flex items-center justify-center text-[#c8f03c]">
               <Shield className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-semibold text-white">Absolute Privacy</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Your files never leave your computer. Processing executes strictly within your browser sandbox.
+            <h3 className="font-display text-sm font-bold text-[#f0efe9]">Absolute Privacy</h3>
+            <p className="text-xs text-[#9a9992] leading-relaxed">
+              Your files never leave your device. Processing executes strictly within your browser sandbox.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/[0.06] glass-panel space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+          <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.07] space-y-2 hover:border-[#c8f03c]/30 transition-colors">
+            <div className="w-8 h-8 rounded-lg bg-[#c8f03c]/10 border border-[#c8f03c]/20 flex items-center justify-center text-[#c8f03c]">
               <Zap className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-semibold text-white">Hardware Accelerated</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Powered by multi-threaded WebAssembly & OffscreenCanvas for instant conversion speeds.
+            <h3 className="font-display text-sm font-bold text-[#f0efe9]">Hardware Accelerated</h3>
+            <p className="text-xs text-[#9a9992] leading-relaxed">
+              Powered by multi-threaded WebAssembly & OffscreenCanvas for ultra-fast conversion speeds.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/[0.06] glass-panel space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+          <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.07] space-y-2 hover:border-[#c8f03c]/30 transition-colors">
+            <div className="w-8 h-8 rounded-lg bg-[#f03c8c]/10 border border-[#f03c8c]/20 flex items-center justify-center text-[#f03c8c]">
               <Infinity className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-semibold text-white">Unlimited & Free</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h3 className="font-display text-sm font-bold text-[#f0efe9]">Unlimited & Free</h3>
+            <p className="text-xs text-[#9a9992] leading-relaxed">
               No daily credit caps, no 10MB limits, and no subscriptions. Convert as many files as you want.
             </p>
           </div>

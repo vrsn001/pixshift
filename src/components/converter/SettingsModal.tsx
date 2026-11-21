@@ -44,23 +44,23 @@ export function SettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-white/[0.12] p-6 shadow-2xl space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-md rounded-2xl bg-[#111113] border border-white/[0.12] p-6 shadow-2xl space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+            <div className="w-8 h-8 rounded-lg bg-[#c8f03c]/10 border border-[#c8f03c]/30 flex items-center justify-center text-[#c8f03c]">
               <Sliders className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">Conversion Settings</h3>
-              <p className="text-xs text-slate-400 truncate max-w-[240px]">{fileName}</p>
+              <h3 className="font-display text-sm font-bold text-[#f0efe9]">Conversion Settings</h3>
+              <p className="text-xs text-[#9a9992] truncate max-w-[240px]">{fileName}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#9a9992] hover:text-[#f0efe9] hover:bg-white/[0.06] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -70,8 +70,8 @@ export function SettingsModal({
         {(category === "image" || category === "video") && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-slate-300">Output Quality</span>
-              <span className="font-semibold text-cyan-400">
+              <span className="font-medium text-[#9a9992]">Output Quality</span>
+              <span className="font-semibold text-[#c8f03c]">
                 {current.quality}% — {getQualityLabel(current.quality)}
               </span>
             </div>
@@ -82,11 +82,11 @@ export function SettingsModal({
               step={1}
               value={current.quality}
               onChange={(e) => setCurrent({ ...current, quality: parseInt(e.target.value) })}
-              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+              className="w-full h-1.5 bg-[#18181b] rounded-lg appearance-none cursor-pointer accent-[#c8f03c]"
             />
-            <div className="flex justify-between text-[10px] text-slate-500">
-              <span>Smaller Size (10%)</span>
-              <span>Best Quality (100%)</span>
+            <div className="flex justify-between text-[10px] text-[#5a5952]">
+              <span>Compressed (10%)</span>
+              <span>Lossless (100%)</span>
             </div>
           </div>
         )}
@@ -95,15 +95,15 @@ export function SettingsModal({
         {(category === "image" || category === "video") && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-slate-300">Resolution Preset</span>
+              <span className="font-medium text-[#9a9992]">Resolution Preset</span>
               <button
                 type="button"
                 onClick={() =>
                   setCurrent({ ...current, maintainAspectRatio: !current.maintainAspectRatio })
                 }
-                className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-cyan-400 transition-colors"
+                className="flex items-center gap-1 text-[11px] text-[#9a9992] hover:text-[#c8f03c] transition-colors"
               >
-                {current.maintainAspectRatio ? <Lock className="w-3 h-3 text-cyan-400" /> : <Unlock className="w-3 h-3 text-slate-500" />}
+                {current.maintainAspectRatio ? <Lock className="w-3 h-3 text-[#c8f03c]" /> : <Unlock className="w-3 h-3 text-[#5a5952]" />}
                 <span>{current.maintainAspectRatio ? "Keep Aspect Ratio" : "Free Scale"}</span>
               </button>
             </div>
@@ -117,11 +117,11 @@ export function SettingsModal({
                     onClick={() => setCurrent({ ...current, width: p.w, height: p.h })}
                     className={`px-2.5 py-2 rounded-xl text-left border transition-all ${
                       isActive
-                        ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-300"
-                        : "bg-slate-800/50 border-white/[0.06] text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                        ? "bg-[#c8f03c]/15 border-[#c8f03c]/50 text-[#c8f03c]"
+                        : "bg-[#18181b] border-white/[0.06] text-[#9a9992] hover:bg-[#18181b]/80 hover:text-[#f0efe9]"
                     }`}
                   >
-                    <div className="text-xs font-semibold">{p.label}</div>
+                    <div className="text-xs font-bold font-display">{p.label}</div>
                     <div className="text-[10px] opacity-70 truncate">{p.sub}</div>
                   </button>
                 );
@@ -133,7 +133,7 @@ export function SettingsModal({
         {/* Audio Bitrate (Video & Audio) */}
         {(category === "video" || category === "audio") && (
           <div className="space-y-2">
-            <span className="text-xs font-medium text-slate-300 block">Audio Bitrate</span>
+            <span className="text-xs font-medium text-[#9a9992] block">Audio Bitrate</span>
             <div className="grid grid-cols-4 gap-2">
               {(["96k", "128k", "192k", "320k"] as const).map((b) => (
                 <button
@@ -142,8 +142,8 @@ export function SettingsModal({
                   onClick={() => setCurrent({ ...current, audioBitrate: b })}
                   className={`py-1.5 rounded-lg text-xs font-medium border text-center transition-all ${
                     current.audioBitrate === b
-                      ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-300 font-bold"
-                      : "bg-slate-800/50 border-white/[0.06] text-slate-400 hover:bg-slate-800"
+                      ? "bg-[#c8f03c]/15 border-[#c8f03c]/50 text-[#c8f03c] font-bold"
+                      : "bg-[#18181b] border-white/[0.06] text-[#9a9992] hover:text-[#f0efe9]"
                   }`}
                 >
                   {b}
@@ -155,14 +155,14 @@ export function SettingsModal({
 
         {/* Apply to all check */}
         <div className="pt-2 border-t border-white/[0.06]">
-          <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+          <label className="flex items-center gap-2 cursor-pointer text-xs text-[#9a9992] hover:text-[#f0efe9]">
             <input
               type="checkbox"
               checked={applyToAll}
               onChange={(e) => setApplyToAll(e.target.checked)}
-              className="w-4 h-4 rounded bg-slate-800 border-white/[0.1] text-cyan-500 focus:ring-0 cursor-pointer"
+              className="w-4 h-4 rounded bg-[#18181b] border-white/[0.1] text-[#c8f03c] focus:ring-0 cursor-pointer"
             />
-            <span>Apply these settings to all {category} files in queue</span>
+            <span>Apply to all {category} files in queue</span>
           </label>
         </div>
 
@@ -171,7 +171,7 @@ export function SettingsModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white transition-colors"
+            className="px-4 py-2 rounded-xl text-xs font-medium text-[#9a9992] hover:text-[#f0efe9] transition-colors"
           >
             Cancel
           </button>
@@ -181,7 +181,7 @@ export function SettingsModal({
               onSave(current, applyToAll);
               onClose();
             }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-colors shadow-lg shadow-cyan-500/20"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-[#0a0a0b] bg-[#c8f03c] hover:bg-[#b5dc30] transition-colors shadow-lg shadow-[#c8f03c]/20"
           >
             <Check className="w-3.5 h-3.5" />
             <span>Save Settings</span>
