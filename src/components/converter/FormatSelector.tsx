@@ -45,7 +45,7 @@ export function FormatSelector({ category, selectedFormat, onSelect, disabled }:
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1.5 w-52 rounded-xl bg-[#111113] border border-white/[0.14] shadow-2xl z-50 py-1.5 animate-fade-in">
+        <div className="absolute right-0 sm:right-0 left-0 sm:left-auto mt-1.5 w-52 rounded-xl bg-[#111113] border border-white/[0.14] shadow-2xl z-50 py-1.5 animate-fade-in">
           <div className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-[#5a5952] border-b border-white/[0.06]">
             Target format ({category})
           </div>

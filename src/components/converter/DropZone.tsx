@@ -65,7 +65,8 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
           }`}
         >
           <Plus className="w-4 h-4 text-[#c8f03c]" />
-          <span>Drop more files here or click to browse (or paste with Ctrl+V)</span>
+          <span className="hidden sm:inline">Drop more files here or click to browse (or paste with Ctrl+V)</span>
+          <span className="sm:hidden">Tap to add more files</span>
         </button>
       </div>
     );
@@ -77,7 +78,7 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
       onDragLeave={(e) => handleDrag(e, false)}
       onDrop={handleDrop}
       onClick={() => inputRef.current?.click()}
-      className={`relative w-full rounded-3xl border-2 border-dashed p-14 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-5 ${
+      className={`relative w-full rounded-3xl border-2 border-dashed p-8 sm:p-14 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-5 ${
         isDragOver
           ? "border-[#c8f03c] bg-[#c8f03c]/10 scale-[1.01] shadow-[0_0_40px_rgba(200,240,60,0.25)]"
           : "border-white/[0.1] bg-[#111113]/90 hover:bg-[#18181b] hover:border-[#c8f03c]/40"

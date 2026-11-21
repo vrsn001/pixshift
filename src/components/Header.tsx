@@ -4,7 +4,7 @@ import React from "react";
 
 export function Header() {
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-[#0a0a0b]/80 backdrop-blur-xl border-b border-white/[0.07]">
+    <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-[#0a0a0b]/80 backdrop-blur-xl border-b border-white/[0.07]">
       {/* Brand Logo with Custom SVG Mark */}
       <a href="/" className="flex items-center gap-2.5 font-display font-extrabold text-2xl tracking-tight text-[#f0efe9] group">
         <svg className="w-8 h-8 shrink-0 transition-transform duration-300 group-hover:scale-105" viewBox="0 0 64 64" fill="none">

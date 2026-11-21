@@ -45,7 +45,7 @@ export function SettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-md rounded-2xl bg-[#111113] border border-white/[0.12] p-6 shadow-2xl space-y-6">
+      <div className="w-full max-w-md rounded-2xl bg-[#111113] border border-white/[0.12] p-4 sm:p-6 shadow-2xl space-y-5 sm:space-y-6 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
           <div className="flex items-center gap-2.5">

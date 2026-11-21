@@ -65,7 +65,7 @@ export function FileQueue({ jobs, onUpdateFormat, onUpdateSettings, onRemoveJob 
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-xs text-[#f0efe9] truncate max-w-[200px] sm:max-w-xs md:max-w-sm">
+                  <span className="font-semibold text-xs text-[#f0efe9] truncate max-w-[140px] sm:max-w-[200px] md:max-w-sm">
                     {job.name}
                   </span>
                   <span className="text-[10px] uppercase font-bold text-[#9a9992] bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">

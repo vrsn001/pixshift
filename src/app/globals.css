@@ -46,8 +46,8 @@ body {
 }
 
 .b1 {
-  width: 600px;
-  height: 600px;
+  width: min(600px, 90vw);
+  height: min(600px, 90vw);
   top: -200px;
   left: -100px;
   background: radial-gradient(circle, rgba(200, 240, 60, 0.16) 0%, transparent 70%);
@@ -55,8 +55,8 @@ body {
 }
 
 .b2 {
-  width: 500px;
-  height: 500px;
+  width: min(500px, 80vw);
+  height: min(500px, 80vw);
   top: 150px;
   right: -150px;
   background: radial-gradient(circle, rgba(240, 60, 140, 0.12) 0%, transparent 70%);
@@ -64,8 +64,8 @@ body {
 }
 
 .b3 {
-  width: 450px;
-  height: 450px;
+  width: min(450px, 75vw);
+  height: min(450px, 75vw);
   bottom: -150px;
   left: 25%;
   background: radial-gradient(circle, rgba(60, 100, 240, 0.08) 0%, transparent 70%);
