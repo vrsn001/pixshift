@@ -43,6 +43,11 @@ body {
   filter: blur(90px);
   pointer-events: none;
   z-index: 0;
+  will-change: transform;
+}
+
+@media (max-width: 640px) {
+  .b2, .b3 { display: none; }
 }
 
 .b1 {

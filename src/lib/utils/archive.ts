@@ -1,5 +1,3 @@
-import JSZip from "jszip";
-
 export interface FileToZip {
   name: string;
   blob: Blob;
@@ -26,6 +24,7 @@ export async function createZipArchive(
   files: FileToZip[],
   onProgress?: (pct: number) => void
 ): Promise<Blob> {
+  const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
 
   files.forEach((file) => {
