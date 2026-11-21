@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" fill="none">
+  <!-- Icon Mark -->
+  <g transform="translate(0, 0)">
+    <rect width="64" height="64" rx="16" fill="#111113" stroke="rgba(255,255,255,0.12)" />
+    <!-- Dynamic Shifting Chevrons -->
+    <path d="M16 20C16 16.6863 18.6863 14 22 14H36L28 30H16V20Z" fill="#c8f03c" />
+    <path d="M48 44C48 47.3137 45.3137 50 42 50H28L36 34H48V44Z" fill="#c8f03c" />
+    <polygon points="34,18 48,18 40,34 26,34" fill="#f0efe9" opacity="0.9" />
+    <polygon points="30,46 16,46 24,30 38,30" fill="#f03c8c" opacity="0.85" />
+    <circle cx="32" cy="32" r="3" fill="#0a0a0b" stroke="#c8f03c" stroke-width="2" />
+  </g>
+
+  <!-- Typography -->
+  <text x="80" y="42" font-family="'Syne', 'Inter', sans-serif" font-size="28" font-weight="800" letter-spacing="-0.03em" fill="#f0efe9">
+    Pixy<tspan fill="#c8f03c">shift</tspan>
+  </text>
+  
+  <!-- Subtle Badge -->
+  <rect x="194" y="24" width="34" height="18" rx="4" fill="rgba(200,240,60,0.12)" stroke="rgba(200,240,60,0.3)" />
+  <text x="211" y="37" font-family="'DM Sans', sans-serif" font-size="10" font-weight="700" fill="#c8f03c" text-anchor="middle">
+    v2.0
+  </text>
+</svg>
