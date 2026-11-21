@@ -145,6 +145,6 @@ export async function transcodeMedia(
     try {
       await ffmpeg.deleteFile(inputName);
       await ffmpeg.deleteFile(outputName);
-    } catch {}
+    } catch { }
   }
 }

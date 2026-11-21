@@ -68,8 +68,10 @@ export async function extractPdfToImages(
 ): Promise<{ name: string; blob: Blob }[]> {
   const arrayBuffer = await file.arrayBuffer();
 
+
   // Dynamically import pdfjs-dist
   const pdfjsLib = await import("pdfjs-dist");
+
 
   // Configure PDF.js worker
   if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
@@ -84,50 +86,50 @@ export async function extractPdfToImages(
   const baseName = file.name.replace(/\.[^/.]+$/, "");
   const mimeType = targetFormat === "jpeg" ? "image/jpeg" : "image/png";
 
-  // Process pages in parallel batches of 4
-  const BATCH_SIZE = 4;
-  let completed = 0;
+    // Process pages in parallel batches of 4
+    const BATCH_SIZE = 4;
+    let completed = 0;
 
-  for (let batchStart = 0; batchStart < numPages; batchStart += BATCH_SIZE) {
-    const batchEnd = Math.min(batchStart + BATCH_SIZE, numPages);
-    const pageNumbers = Array.from({ length: batchEnd - batchStart }, (_, i) => batchStart + i + 1);
+    for (let batchStart = 0; batchStart < numPages; batchStart += BATCH_SIZE) {
+      const batchEnd = Math.min(batchStart + BATCH_SIZE, numPages);
+      const pageNumbers = Array.from({ length: batchEnd - batchStart }, (_, i) => batchStart + i + 1);
 
-    await Promise.all(
-      pageNumbers.map(async (pageNum) => {
-        const page = await pdf.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 2.0 });
+        await Promise.all(
+          pageNumbers.map(async (pageNum) => {
+            const page = await pdf.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 2.0 });
 
-        const canvas = document.createElement("canvas");
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        const ctx = canvas.getContext("2d");
+            const canvas = document.createElement("canvas");
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext("2d");
 
-        if (ctx) {
-          if (targetFormat === "jpeg") {
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (ctx) {
+              if (targetFormat === "jpeg") {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+              }
+
+            await page.render({
+              canvasContext: ctx,
+              viewport,
+            }).promise;
+
+            const blob = await new Promise<Blob>((resolve) => {
+              canvas.toBlob((b) => resolve(b!), mimeType, 0.95);
+            });
+
+            results[pageNum - 1] = {
+              name: `${baseName}_page_${pageNum}.${targetFormat}`,
+              blob,
+            };
           }
-
-          await page.render({
-            canvasContext: ctx,
-            viewport,
-          }).promise;
-
-          const blob = await new Promise<Blob>((resolve) => {
-            canvas.toBlob((b) => resolve(b!), mimeType, 0.95);
-          });
-
-          results[pageNum - 1] = {
-            name: `${baseName}_page_${pageNum}.${targetFormat}`,
-            blob,
-          };
-        }
 
         completed++;
         onProgress?.(Math.round((completed / numPages) * 100));
       })
     );
-  }
+    }
 
-  return results.filter((r): r is { name: string; blob: Blob } => r !== null);
-}
+    return results.filter((r): r is { name: string; blob: Blob } => r !== null);
+  }

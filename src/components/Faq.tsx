@@ -52,9 +52,8 @@ export function Faq() {
               >
                 <span>{faq.q}</span>
                 <ChevronDown
-                  className={`w-4 h-4 text-[#9a9992] transition-transform duration-200 shrink-0 ${
-                    isOpen ? "rotate-180 text-[#c8f03c]" : ""
-                  }`}
+                  className={`w-4 h-4 text-[#9a9992] transition-transform duration-200 shrink-0 ${isOpen ? "rotate-180 text-[#c8f03c]" : ""
+                    }`}
                 />
               </button>
               {isOpen && (
