@@ -54,7 +54,9 @@ test.describe("Phase 1 brand, OpenGraph, WCAG AA contrast, and interactive acces
     await page.goto("/");
 
     const dropBtn = page.getByRole("button", { name: /drop files here or press enter/i });
+    await expect(dropBtn).toBeVisible();
     await dropBtn.focus();
+    await expect(dropBtn).toBeFocused();
     const [chooser] = await Promise.all([
       page.waitForEvent("filechooser"),
       page.keyboard.press("Enter"),

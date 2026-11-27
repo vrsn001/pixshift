@@ -1,5 +1,6 @@
 import { ConversionSettings } from "@/types/converter";
 import { encodeBmpFromImageData, encodeIcoFromPngBytes } from "./encoders";
+import { inspectImageMetadata, stripJpegBinaryMetadata } from "./exif";
 
 let cachedAvifSupport: boolean | null = null;
 
@@ -184,8 +185,8 @@ function createDrawingCanvas(width: number, height: number): {
 
 /**
  * Converts an image file to the desired target format with custom settings.
- * Uses pure-TS encoders for BMP/ICO, strict capability check for AVIF, and
- * delegates PDF exports to pdf-lib rather than emitting mislabeled PNG bytes.
+ * Inspects EXIF metadata & orientation before choosing lossless fast-paths so
+ * rotated JPEGs always bake upright via createImageBitmap({ imageOrientation: "from-image" }).
  */
 export async function convertImage(
   file: File,
@@ -202,7 +203,29 @@ export async function convertImage(
 
   onProgress?.(10);
   const processedBlob = await preprocessImageFile(file);
-  onProgress?.(30);
+  const exifInfo = await inspectImageMetadata(processedBlob);
+  onProgress?.(25);
+
+  const stripExif = settings.stripExif !== false;
+  const isJpegSource =
+    processedBlob.type === "image/jpeg" || /\.(jpe?g)$/i.test(file.name);
+  const isJpegTarget = format === "jpeg" || format === "jpg";
+  const noResize = !settings.width && !settings.height;
+  const uprightOrientation = !exifInfo.orientation || exifInfo.orientation === 1;
+
+  // Lossless binary fast-path ONLY when orientation is absent or 1 (never bypass baking when rotated > 1)
+  if (isJpegSource && isJpegTarget && noResize && settings.quality >= 98 && uprightOrientation) {
+    if (!stripExif && settings.quality === 100) {
+      onProgress?.(100);
+      return processedBlob;
+    }
+    if (stripExif) {
+      const rawBytes = new Uint8Array(await processedBlob.arrayBuffer());
+      const strippedBytes = stripJpegBinaryMetadata(rawBytes);
+      onProgress?.(100);
+      return new Blob([strippedBytes.buffer as ArrayBuffer], { type: "image/jpeg" });
+    }
+  }
 
   const bitmap = await createImageBitmap(processedBlob, {
     imageOrientation: "from-image",

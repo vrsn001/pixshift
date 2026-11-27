@@ -13,14 +13,51 @@ import {
 } from "@/types/converter";
 import { detectFileInfo } from "@/lib/converters/detector";
 import { convertImage } from "@/lib/converters/imageConverter";
-import { transcodeMedia, preloadFFmpeg } from "@/lib/converters/mediaConverter";
+import { transcodeMediaWithInfo, preloadFFmpeg } from "@/lib/converters/mediaConverter";
 import { mergeImagesToPdf, extractPdfToImages } from "@/lib/converters/documentConverter";
+import { inspectImageMetadata } from "@/lib/converters/exif";
 import { createZipArchive, triggerDownload, FileToZip } from "@/lib/utils/archive";
 import {
   partitionConversionBatch,
   revokeJobUrls,
   shouldAutoResetMergeToPdf,
 } from "@/components/converter/workspaceHelpers";
+
+async function probeImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  try {
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const dims = { width: bmp.width, height: bmp.height };
+    bmp.close();
+    return dims;
+  } catch {
+    return null;
+  }
+}
+
+async function probeVideoMetadata(
+  file: File
+): Promise<{ width: number; height: number; durationSec: number } | null> {
+  if (typeof document === "undefined") return null;
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    const url = URL.createObjectURL(file);
+    video.preload = "metadata";
+    video.src = url;
+    video.onloadedmetadata = () => {
+      const durationSec = Number.isFinite(video.duration) ? Number(video.duration.toFixed(2)) : 0;
+      const result =
+        video.videoWidth > 0 && video.videoHeight > 0
+          ? { width: video.videoWidth, height: video.videoHeight, durationSec }
+          : null;
+      URL.revokeObjectURL(url);
+      resolve(result);
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+  });
+}
 
 export function ConverterWorkspace() {
   const [jobs, setJobs] = useState<ConversionJob[]>([]);
@@ -82,6 +119,7 @@ export function ConverterWorkspace() {
           height: null,
           maintainAspectRatio: true,
           audioBitrate: "192k",
+          videoQualityPreset: "balanced",
           stripExif: true,
         },
       });
@@ -97,6 +135,36 @@ export function ConverterWorkspace() {
       if (acceptedJobs.some((j) => j.category === "video" || j.category === "audio")) {
         preloadFFmpeg();
       }
+
+      // Asynchronously enrich added jobs with EXIF metadata and source dimensions/duration
+      acceptedJobs.forEach(async (job) => {
+        if (job.category === "image") {
+          const [exifInfo, dims] = await Promise.all([
+            inspectImageMetadata(job.file),
+            probeImageDimensions(job.file),
+          ]);
+          setJobs((prev) =>
+            prev.map((item) =>
+              item.id === job.id ? { ...item, exifInfo, sourceDimensions: dims } : item
+            )
+          );
+        } else if (job.category === "video") {
+          const meta = await probeVideoMetadata(job.file);
+          if (meta) {
+            setJobs((prev) =>
+              prev.map((item) =>
+                item.id === job.id
+                  ? {
+                      ...item,
+                      sourceDimensions: { width: meta.width, height: meta.height },
+                      durationSec: meta.durationSec,
+                    }
+                  : item
+              )
+            );
+          }
+        }
+      });
     }
   }, []);
 
@@ -116,6 +184,7 @@ export function ConverterWorkspace() {
           outputFiles: undefined,
           error: undefined,
           durationMs: undefined,
+          engineUsed: undefined,
         };
       })
     );
@@ -199,6 +268,7 @@ export function ConverterWorkspace() {
                   progress: 100,
                   outputFiles: [mergedOutput],
                   durationMs,
+                  engineUsed: "pdf",
                 };
               }
               if (mergeIds.has(item.id)) {
@@ -209,6 +279,7 @@ export function ConverterWorkspace() {
                   progress: 100,
                   outputFiles: undefined,
                   durationMs,
+                  engineUsed: "pdf",
                 };
               }
               return item;
@@ -238,6 +309,7 @@ export function ConverterWorkspace() {
 
       try {
         let outputFiles: OutputFile[] = [];
+        let engineUsed: ConversionJob["engineUsed"] = "canvas";
         const baseName = job.name.replace(/\.[^/.]+$/, "");
 
         if (job.category === "image") {
@@ -245,6 +317,7 @@ export function ConverterWorkspace() {
             const pdfBlob = await mergeImagesToPdf([job.file], (progress) => {
               setJobs((prev) => prev.map((item) => (item.id === job.id ? { ...item, progress } : item)));
             });
+            engineUsed = "pdf";
             outputFiles = [
               {
                 name: `${baseName}.pdf`,
@@ -257,6 +330,7 @@ export function ConverterWorkspace() {
             const blob = await convertImage(job.file, job.targetFormat, job.settings, (progress) => {
               setJobs((prev) => prev.map((item) => (item.id === job.id ? { ...item, progress } : item)));
             });
+            engineUsed = job.targetFormat === "bmp" || job.targetFormat === "ico" ? "binary" : "canvas";
             outputFiles = [
               {
                 name: `${baseName}.${job.targetFormat}`,
@@ -267,9 +341,15 @@ export function ConverterWorkspace() {
             ];
           }
         } else if (job.category === "video" || job.category === "audio") {
-          const blob = await transcodeMedia(job.file, job.targetFormat, job.settings, (progress) => {
-            setJobs((prev) => prev.map((item) => (item.id === job.id ? { ...item, progress } : item)));
-          });
+          const { blob, engine } = await transcodeMediaWithInfo(
+            job.file,
+            job.targetFormat,
+            job.settings,
+            (progress) => {
+              setJobs((prev) => prev.map((item) => (item.id === job.id ? { ...item, progress } : item)));
+            }
+          );
+          engineUsed = engine;
           outputFiles = [
             {
               name: `${baseName}.${job.targetFormat}`,
@@ -285,6 +365,7 @@ export function ConverterWorkspace() {
           const pages = await extractPdfToImages(job.file, job.targetFormat, (progress) => {
             setJobs((prev) => prev.map((item) => (item.id === job.id ? { ...item, progress } : item)));
           });
+          engineUsed = "pdf";
           outputFiles = pages.map((p) => ({
             name: p.name,
             blob: p.blob,
@@ -297,7 +378,9 @@ export function ConverterWorkspace() {
         const durationMs = Date.now() - startTime;
         setJobs((prev) =>
           prev.map((item) =>
-            item.id === job.id ? { ...item, status: "done", progress: 100, outputFiles, durationMs } : item
+            item.id === job.id
+              ? { ...item, status: "done", progress: 100, outputFiles, durationMs, engineUsed }
+              : item
           )
         );
       } catch (err: unknown) {
@@ -345,7 +428,7 @@ export function ConverterWorkspace() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <DropZone onFilesAdded={handleFilesAdded} hasFiles={jobs.length > 0} />
 
       {rejectedNotices.length > 0 && (
