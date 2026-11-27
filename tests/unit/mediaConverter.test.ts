@@ -133,4 +133,43 @@ describe("mediaConverter & WebCodecs routing", () => {
     expect(res.engine).toBe("webcodecs");
     expect(res.blob).toBe(hwBlob);
   });
+
+  it("test_buildFfmpegArgs_gif_respects_fps_width_loop_and_reverse", async () => {
+    const { buildFfmpegArgs } = await import("@/lib/converters/mediaConverter");
+
+    const args = buildFfmpegArgs("clip.webm", "out.gif", "gif", {
+      ...baseSettings,
+      fps: 18,
+      width: 360,
+      gifLoop: 3,
+      reverseGif: true,
+      trimStart: 0.2,
+      trimEnd: 1.4,
+    });
+
+    expect(args).toEqual(expect.arrayContaining(["-ss", "0.2", "-to", "1.4", "-loop", "3"]));
+    const vfIdx = args.indexOf("-vf");
+    expect(vfIdx).toBeGreaterThan(-1);
+    const vf = args[vfIdx + 1] ?? "";
+    expect(vf).toContain("fps=18");
+    expect(vf).toContain("scale=360:-1:flags=lanczos");
+    expect(vf).toContain("reverse");
+    expect(vf).toContain("palettegen");
+    expect(vf).toContain("paletteuse");
+  });
+
+  it("test_buildFfmpegArgs_audio_trim_outputs_vn_trim_and_bitrate", async () => {
+    const { buildFfmpegArgs } = await import("@/lib/converters/mediaConverter");
+
+    const args = buildFfmpegArgs("tone.wav", "clip.mp3", "mp3", {
+      ...baseSettings,
+      trimStart: 0.5,
+      trimEnd: 1.8,
+      audioBitrate: "256k",
+    });
+
+    expect(args).toEqual(
+      expect.arrayContaining(["-ss", "0.5", "-to", "1.8", "-vn", "-b:a", "256k"])
+    );
+  });
 });

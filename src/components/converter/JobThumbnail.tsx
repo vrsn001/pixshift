@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FileAudio, FileImage, FileText, FileVideo } from "lucide-react";
 import type { FileCategory } from "@/types/converter";
 
@@ -13,6 +13,10 @@ interface JobThumbnailProps {
 const NON_BROWSER_IMAGE_FORMATS = new Set(["heic", "heif", "tiff"]);
 
 export function JobThumbnail({ file, category, inputFormat }: JobThumbnailProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(
+    () => typeof IntersectionObserver === "undefined"
+  );
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -21,8 +25,27 @@ export function JobThumbnail({ file, category, inputFormat }: JobThumbnailProps)
   const shouldRenderVideo = category === "video";
 
   useEffect(() => {
+    if (typeof IntersectionObserver === "undefined" || !containerRef.current) {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { rootMargin: "160px" }
+    );
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     setLoadFailed(false);
-    if (!shouldRenderImage && !shouldRenderVideo) {
+    if (!isVisible || (!shouldRenderImage && !shouldRenderVideo)) {
       setPreviewUrl(null);
       return;
     }
@@ -32,11 +55,14 @@ export function JobThumbnail({ file, category, inputFormat }: JobThumbnailProps)
     return () => {
       URL.revokeObjectURL(url);
     };
-  }, [file, shouldRenderImage, shouldRenderVideo]);
+  }, [file, isVisible, shouldRenderImage, shouldRenderVideo]);
 
   if (previewUrl && shouldRenderImage && !loadFailed) {
     return (
-      <div className="w-12 h-12 rounded-lg bg-[#18181b] border border-white/[0.1] overflow-hidden shrink-0">
+      <div
+        ref={containerRef}
+        className="w-12 h-12 rounded-lg bg-[#18181b] border border-white/[0.1] overflow-hidden shrink-0"
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={previewUrl}
@@ -50,7 +76,10 @@ export function JobThumbnail({ file, category, inputFormat }: JobThumbnailProps)
 
   if (previewUrl && shouldRenderVideo && !loadFailed) {
     return (
-      <div className="w-12 h-12 rounded-lg bg-[#18181b] border border-white/[0.1] overflow-hidden shrink-0">
+      <div
+        ref={containerRef}
+        className="w-12 h-12 rounded-lg bg-[#18181b] border border-white/[0.1] overflow-hidden shrink-0"
+      >
         <video
           src={previewUrl}
           muted
@@ -77,7 +106,10 @@ export function JobThumbnail({ file, category, inputFormat }: JobThumbnailProps)
   };
 
   return (
-    <div className="w-12 h-12 rounded-lg bg-[#18181b] border border-white/[0.08] flex flex-col items-center justify-center gap-0.5 shrink-0">
+    <div
+      ref={containerRef}
+      className="w-12 h-12 rounded-lg bg-[#18181b] border border-white/[0.08] flex flex-col items-center justify-center gap-0.5 shrink-0"
+    >
       {renderFallbackIcon()}
       <span className="font-mono text-[9px] uppercase text-[#9a9992] leading-none">
         {inputFormat.slice(0, 4)}

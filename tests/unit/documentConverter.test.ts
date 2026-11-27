@@ -134,4 +134,47 @@ describe("documentConverter", () => {
     expect(pageCleanup).toHaveBeenCalledTimes(2);
     expect(pdfDestroy).toHaveBeenCalledTimes(1);
   });
+
+  it("test_pdfTools_parse_reorder_rotate_split_and_merge", async () => {
+    const { PDFDocument } = await import("pdf-lib");
+    const {
+      parsePageRanges,
+      editPdfPages,
+      splitPdfByRanges,
+      mergePdfDocuments,
+    } = await import("@/lib/converters/pdfTools");
+
+    expect(parsePageRanges("1-2, 4", 4)).toEqual([[0, 1], [3]]);
+    expect(() => parsePageRanges("4-2", 4)).toThrow(/invalid/i);
+    expect(() => parsePageRanges("1, 99", 4)).toThrow(/out of range/i);
+
+    const fixtures = await ensureFixtures();
+    const pdf4Bytes = fs.readFileSync(fixtures.sample4PagePdf);
+    const pdf4File = new File([pdf4Bytes], "four.pdf", { type: "application/pdf" });
+
+    // Reorder [4th, 1st] with 90deg and 180deg rotation
+    const editedBlob = await editPdfPages(pdf4File, [
+      { sourcePageIndex: 3, rotateDeg: 90 },
+      { sourcePageIndex: 0, rotateDeg: 180 },
+    ]);
+    const editedDoc = await PDFDocument.load(await editedBlob.arrayBuffer());
+    expect(editedDoc.getPageCount()).toBe(2);
+    expect(editedDoc.getPage(0).getRotation().angle).toBe(90);
+    expect(editedDoc.getPage(1).getRotation().angle).toBe(180);
+
+    // Split into 2 parts ("1-2, 3-4")
+    const parts = await splitPdfByRanges(pdf4File, "1-2, 3-4");
+    expect(parts).toHaveLength(2);
+    const part1Doc = await PDFDocument.load(await parts[0]!.blob.arrayBuffer());
+    const part2Doc = await PDFDocument.load(await parts[1]!.blob.arrayBuffer());
+    expect(part1Doc.getPageCount()).toBe(2);
+    expect(part2Doc.getPageCount()).toBe(2);
+
+    // Merge 4-page PDF + 2-page PDF -> 6 pages
+    const pdf2Bytes = fs.readFileSync(fixtures.sample2PagePdf);
+    const pdf2File = new File([pdf2Bytes], "two.pdf", { type: "application/pdf" });
+    const mergedBlob = await mergePdfDocuments([pdf4File, pdf2File]);
+    const mergedDoc = await PDFDocument.load(await mergedBlob.arrayBuffer());
+    expect(mergedDoc.getPageCount()).toBe(6);
+  });
 });

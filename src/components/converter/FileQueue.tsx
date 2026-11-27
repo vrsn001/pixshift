@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   Sliders,
   Download,
@@ -8,6 +8,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Columns2,
+  Folder,
+  Film,
+  FileText,
+  ScanText,
+  Share2,
+  AlertTriangle,
 } from "lucide-react";
 import { ConversionJob, ConversionSettings, SupportedFormat } from "@/types/converter";
 import { FormatSelector } from "./FormatSelector";
@@ -21,11 +27,55 @@ interface FileQueueProps {
   onUpdateFormat: (id: string, format: SupportedFormat) => void;
   onUpdateSettings: (id: string, settings: ConversionSettings, applyToAll: boolean) => void;
   onRemoveJob: (id: string) => void;
+  onOpenGifStudio?: (job: ConversionJob) => void;
+  onOpenPdfStudio?: (job: ConversionJob) => void;
+  onRunOcrJob?: (job: ConversionJob) => void;
+  onViewOcrText?: (job: ConversionJob) => void;
+  onShareJob?: (job: ConversionJob) => void;
 }
 
-export function FileQueue({ jobs, onUpdateFormat, onUpdateSettings, onRemoveJob }: FileQueueProps) {
+const VIRTUALIZE_THRESHOLD = 35;
+const VIRTUAL_ROW_HEIGHT = 86;
+const VIRTUAL_VIEWPORT_HEIGHT = 540;
+const VIRTUAL_OVERSCAN = 6;
+
+export function FileQueue({
+  jobs,
+  onUpdateFormat,
+  onUpdateSettings,
+  onRemoveJob,
+  onOpenGifStudio,
+  onOpenPdfStudio,
+  onRunOcrJob,
+  onViewOcrText,
+  onShareJob,
+}: FileQueueProps) {
   const [activeSettingsJob, setActiveSettingsJob] = useState<ConversionJob | null>(null);
   const [activeDiffJob, setActiveDiffJob] = useState<ConversionJob | null>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  const isVirtualized = jobs.length > VIRTUALIZE_THRESHOLD;
+
+  const { startIndex, endIndex, topSpacer, bottomSpacer } = useMemo(() => {
+    if (!isVirtualized) {
+      return { startIndex: 0, endIndex: jobs.length, topSpacer: 0, bottomSpacer: 0 };
+    }
+    const visibleCount = Math.ceil(VIRTUAL_VIEWPORT_HEIGHT / VIRTUAL_ROW_HEIGHT);
+    const start = Math.max(0, Math.floor(scrollTop / VIRTUAL_ROW_HEIGHT) - VIRTUAL_OVERSCAN);
+    const end = Math.min(jobs.length, start + visibleCount + VIRTUAL_OVERSCAN * 2);
+    return {
+      startIndex: start,
+      endIndex: end,
+      topSpacer: start * VIRTUAL_ROW_HEIGHT,
+      bottomSpacer: Math.max(0, (jobs.length - end) * VIRTUAL_ROW_HEIGHT),
+    };
+  }, [isVirtualized, jobs.length, scrollTop]);
+
+  const displayedJobs = useMemo(
+    () => (isVirtualized ? jobs.slice(startIndex, endIndex) : jobs),
+    [endIndex, isVirtualized, jobs, startIndex]
+  );
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -33,201 +83,299 @@ export function FileQueue({ jobs, onUpdateFormat, onUpdateSettings, onRemoveJob 
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const renderRow = (job: ConversionJob) => {
+    const isDone = job.status === "done";
+    const isProcessing = job.status === "processing";
+    const isError = job.status === "error";
+
+    const primaryOutput = job.outputFiles?.[0];
+    const canCompare =
+      isDone &&
+      job.category === "image" &&
+      job.targetFormat !== "pdf" &&
+      job.targetFormat !== "txt" &&
+      Boolean(primaryOutput);
+
+    const totalOutputBytes =
+      job.outputFiles?.reduce((sum, f) => sum + f.size, 0) ?? 0;
+    const deltaBytes = job.size - totalOutputBytes;
+    const deltaPct =
+      job.size > 0 && job.outputFiles && job.outputFiles.length > 0
+        ? Math.round((deltaBytes / job.size) * 100)
+        : null;
+
+    const hasInputMetadata = Boolean(job.exifInfo?.hasExif || job.exifInfo?.hasXmp);
+    const exifStripped =
+      isDone &&
+      job.category === "image" &&
+      hasInputMetadata &&
+      (job.settings.stripExif !== false || job.targetFormat !== job.inputFormat);
+
+    return (
+      <div
+        key={job.id}
+        data-queue-row="true"
+        className="w-full rounded-xl bg-[#111113] border border-white/[0.08] p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors hover:border-white/[0.16]"
+      >
+        {/* Left: Thumbnail + File Info */}
+        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+          <JobThumbnail file={job.file} category={job.category} inputFormat={job.inputFormat} />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold text-xs text-[#f0efe9] truncate max-w-[140px] sm:max-w-[200px] md:max-w-xs">
+                {job.name}
+              </span>
+              <span className="text-[10px] uppercase font-mono font-bold text-[#9a9992] bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.08]">
+                {job.inputFormat}
+              </span>
+
+              {job.folderPath && (
+                <span className="inline-flex items-center gap-1 font-mono text-[10px] text-[#60a5fa] bg-[#2563eb]/10 px-1.5 py-0.5 rounded border border-[#60a5fa]/30 truncate max-w-[160px]">
+                  <Folder className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{job.folderPath}</span>
+                </span>
+              )}
+
+              {exifStripped ? (
+                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border bg-[#c8f03c]/10 border-[#c8f03c]/35 text-[#c8f03c]">
+                  STRIPPED
+                </span>
+              ) : hasInputMetadata ? (
+                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border bg-[#2563eb]/20 border-[#60a5fa]/40 text-[#60a5fa]">
+                  EXIF
+                </span>
+              ) : null}
+
+              {isDone && job.engineUsed && (
+                <span
+                  className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${
+                    job.engineUsed === "webcodecs"
+                      ? "bg-[#2563eb]/20 border-[#60a5fa]/40 text-[#60a5fa]"
+                      : "bg-white/[0.04] border-white/[0.1] text-[#9a9992]"
+                  }`}
+                >
+                  {job.engineUsed === "webcodecs" ? "WEBCODECS HW" : job.engineUsed}
+                </span>
+              )}
+
+              {job.targetUnreachableWarning && (
+                <span
+                  title={job.targetUnreachableWarning}
+                  className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border bg-[#f03c8c]/10 border-[#f03c8c]/40 text-[#f03c8c]"
+                >
+                  <AlertTriangle className="w-2.5 h-2.5" aria-hidden="true" />
+                  <span>Target KB floor</span>
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-[#8a8980] mt-1 tabular-nums">
+              <span>{formatFileSize(job.size)}</span>
+              {isDone && totalOutputBytes > 0 && (
+                <>
+                  <span>→ {formatFileSize(totalOutputBytes)}</span>
+                  {deltaPct !== null && (
+                    <span
+                      className={`font-bold ${
+                        deltaBytes >= 0 ? "text-[#c8f03c]" : "text-[#f03c8c]"
+                      }`}
+                    >
+                      {deltaBytes >= 0 ? `-${deltaPct}%` : `+${Math.abs(deltaPct)}%`}
+                    </span>
+                  )}
+                </>
+              )}
+              {job.durationMs !== undefined && (
+                <span>· {(job.durationMs / 1000).toFixed(1)}s</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Middle: Format & Settings / Studio Controls */}
+        <div className="flex items-center flex-wrap gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-[#9a9992]">
+            <span>to</span>
+            <FormatSelector
+              category={job.category}
+              selectedFormat={job.targetFormat}
+              onSelect={(fmt) => onUpdateFormat(job.id, fmt)}
+              disabled={isProcessing}
+            />
+          </div>
+
+          {(job.category === "image" || job.category === "video" || job.category === "audio") && (
+            <button
+              type="button"
+              title="Configure resolution and quality"
+              aria-label={`Configure settings for ${job.name}`}
+              disabled={isProcessing}
+              onClick={() => setActiveSettingsJob(job)}
+              className="w-8 h-8 rounded-lg bg-[#18181b] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[#9a9992] hover:text-[#c8f03c] transition-colors disabled:opacity-40 active:scale-[0.98]"
+            >
+              <Sliders className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
+          )}
+
+          {job.category === "video" && onOpenGifStudio && (
+            <button
+              type="button"
+              disabled={isProcessing}
+              onClick={() => onOpenGifStudio(job)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-semibold bg-[#18181b] hover:bg-white/[0.08] border border-white/[0.08] text-[#9a9992] hover:text-[#c8f03c] transition-colors disabled:opacity-40"
+            >
+              <Film className="w-3 h-3" aria-hidden="true" />
+              <span>GIF Studio</span>
+            </button>
+          )}
+
+          {job.category === "document" && onOpenPdfStudio && (
+            <button
+              type="button"
+              disabled={isProcessing}
+              onClick={() => onOpenPdfStudio(job)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-semibold bg-[#18181b] hover:bg-white/[0.08] border border-white/[0.08] text-[#9a9992] hover:text-[#c8f03c] transition-colors disabled:opacity-40"
+            >
+              <FileText className="w-3 h-3" aria-hidden="true" />
+              <span>Page Studio</span>
+            </button>
+          )}
+
+          {(job.category === "image" || job.category === "document") && onRunOcrJob && (
+            <button
+              type="button"
+              disabled={isProcessing}
+              onClick={() => onRunOcrJob(job)}
+              aria-label={`Extract OCR text from ${job.name}`}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-semibold bg-[#18181b] hover:bg-white/[0.08] border border-white/[0.08] text-[#9a9992] hover:text-[#60a5fa] transition-colors disabled:opacity-40"
+            >
+              <ScanText className="w-3 h-3" aria-hidden="true" />
+              <span>OCR</span>
+            </button>
+          )}
+        </div>
+
+        {/* Right: Status / Progress / Action */}
+        <div className="flex items-center justify-between md:justify-end gap-2 min-w-[140px]">
+          {isProcessing && (
+            <div className="flex items-center gap-2">
+              <div className="w-20 bg-[#18181b] rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-[#c8f03c] h-full transition-all duration-300 rounded-full"
+                  style={{ width: `${job.progress}%` }}
+                />
+              </div>
+              <span className="text-[11px] font-mono text-[#c8f03c] tabular-nums">
+                {job.progress}%
+              </span>
+            </div>
+          )}
+
+          {isDone && (
+            <div className="flex items-center flex-wrap gap-1.5">
+              <span className="flex items-center gap-1 text-[11px] text-[#c8f03c] font-semibold">
+                <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Done</span>
+              </span>
+
+              {canCompare && (
+                <button
+                  type="button"
+                  onClick={() => setActiveDiffJob(job)}
+                  aria-label={`Compare ${job.name}`}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold bg-[#18181b] hover:bg-white/[0.08] border border-white/[0.12] text-[#f0efe9] transition-colors active:scale-[0.98]"
+                >
+                  <Columns2 className="w-3.5 h-3.5 text-[#60a5fa]" aria-hidden="true" />
+                  <span>Compare</span>
+                </button>
+              )}
+
+              {job.ocrText !== undefined && onViewOcrText && (
+                <button
+                  type="button"
+                  onClick={() => onViewOcrText(job)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold bg-[#18181b] hover:bg-white/[0.08] border border-[#60a5fa]/40 text-[#60a5fa] transition-colors"
+                >
+                  <ScanText className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>View Text</span>
+                </button>
+              )}
+
+              {primaryOutput && onShareJob && (
+                <button
+                  type="button"
+                  onClick={() => onShareJob(job)}
+                  aria-label={`Share ${job.name}`}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold bg-[#18181b] hover:bg-white/[0.08] border border-white/[0.12] text-[#f0efe9] transition-colors"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-[#c8f03c]" aria-hidden="true" />
+                  <span>Share</span>
+                </button>
+              )}
+
+              {job.outputFiles && job.outputFiles.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    job.outputFiles?.forEach((out) => triggerDownloadUrl(out.url, out.name));
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#c8f03c] hover:bg-[#b5dc30] text-[#0a0a0b] transition-all shadow-md shadow-[#c8f03c]/20 active:scale-[0.98]"
+                >
+                  <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Download</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {isError && (
+            <span
+              className="flex items-center gap-1 text-[11px] text-[#f03c8c] font-medium"
+              title={job.error}
+            >
+              <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Failed</span>
+            </span>
+          )}
+
+          <button
+            type="button"
+            disabled={isProcessing}
+            onClick={() => onRemoveJob(job.id)}
+            title="Remove file"
+            aria-label={`Remove ${job.name}`}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8a8980] hover:text-[#f03c8c] hover:bg-[#f03c8c]/10 transition-colors disabled:opacity-40 active:scale-[0.98]"
+          >
+            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full space-y-2.5">
       <div className="flex items-center justify-between px-1">
         <span className="font-mono text-[10px] tracking-widest uppercase text-[#8a8980]">
-          02 // QUEUE ({jobs.length})
+          02 // QUEUE ({jobs.length}){isVirtualized ? " · WINDOWED" : ""}
         </span>
       </div>
 
-      {jobs.map((job) => {
-        const isDone = job.status === "done";
-        const isProcessing = job.status === "processing";
-        const isError = job.status === "error";
-
-        const primaryOutput = job.outputFiles?.[0];
-        const canCompare =
-          isDone &&
-          job.category === "image" &&
-          job.targetFormat !== "pdf" &&
-          Boolean(primaryOutput);
-
-        const totalOutputBytes =
-          job.outputFiles?.reduce((sum, f) => sum + f.size, 0) ?? 0;
-        const deltaBytes = job.size - totalOutputBytes;
-        const deltaPct =
-          job.size > 0 && job.outputFiles && job.outputFiles.length > 0
-            ? Math.round((deltaBytes / job.size) * 100)
-            : null;
-
-        const hasInputMetadata = Boolean(job.exifInfo?.hasExif || job.exifInfo?.hasXmp);
-        const exifStripped =
-          isDone &&
-          job.category === "image" &&
-          hasInputMetadata &&
-          (job.settings.stripExif !== false || job.targetFormat !== job.inputFormat);
-
-        return (
-          <div
-            key={job.id}
-            className="w-full rounded-xl bg-[#111113] border border-white/[0.08] p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors hover:border-white/[0.16]"
-          >
-            {/* Left: Thumbnail + File Info */}
-            <div className="flex items-center gap-3.5 min-w-0 flex-1">
-              <JobThumbnail file={job.file} category={job.category} inputFormat={job.inputFormat} />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold text-xs text-[#f0efe9] truncate max-w-[140px] sm:max-w-[200px] md:max-w-xs">
-                    {job.name}
-                  </span>
-                  <span className="text-[10px] uppercase font-mono font-bold text-[#9a9992] bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.08]">
-                    {job.inputFormat}
-                  </span>
-
-                  {/* EXIF / STRIPPED badge */}
-                  {exifStripped ? (
-                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border bg-[#c8f03c]/10 border-[#c8f03c]/35 text-[#c8f03c]">
-                      STRIPPED
-                    </span>
-                  ) : hasInputMetadata ? (
-                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border bg-[#2563eb]/20 border-[#60a5fa]/40 text-[#60a5fa]">
-                      EXIF
-                    </span>
-                  ) : null}
-
-                  {/* Hardware Engine Badge */}
-                  {isDone && job.engineUsed && (
-                    <span
-                      className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${
-                        job.engineUsed === "webcodecs"
-                          ? "bg-[#2563eb]/20 border-[#60a5fa]/40 text-[#60a5fa]"
-                          : "bg-white/[0.04] border-white/[0.1] text-[#9a9992]"
-                      }`}
-                    >
-                      {job.engineUsed === "webcodecs" ? "WEBCODECS HW" : job.engineUsed}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-[#8a8980] mt-1 tabular-nums">
-                  <span>{formatFileSize(job.size)}</span>
-                  {isDone && totalOutputBytes > 0 && (
-                    <>
-                      <span>→ {formatFileSize(totalOutputBytes)}</span>
-                      {deltaPct !== null && (
-                        <span
-                          className={`font-bold ${
-                            deltaBytes >= 0 ? "text-[#c8f03c]" : "text-[#f03c8c]"
-                          }`}
-                        >
-                          {deltaBytes >= 0 ? `-${deltaPct}%` : `+${Math.abs(deltaPct)}%`}
-                        </span>
-                      )}
-                    </>
-                  )}
-                  {job.durationMs !== undefined && (
-                    <span>· {(job.durationMs / 1000).toFixed(1)}s</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Middle: Format & Settings Controls */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-xs text-[#9a9992]">
-                <span>to</span>
-                <FormatSelector
-                  category={job.category}
-                  selectedFormat={job.targetFormat}
-                  onSelect={(fmt) => onUpdateFormat(job.id, fmt)}
-                  disabled={isProcessing}
-                />
-              </div>
-
-              {(job.category === "image" || job.category === "video" || job.category === "audio") && (
-                <button
-                  type="button"
-                  title="Configure resolution and quality"
-                  aria-label={`Configure settings for ${job.name}`}
-                  disabled={isProcessing}
-                  onClick={() => setActiveSettingsJob(job)}
-                  className="w-8 h-8 rounded-lg bg-[#18181b] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[#9a9992] hover:text-[#c8f03c] transition-colors disabled:opacity-40 active:scale-[0.98]"
-                >
-                  <Sliders className="w-3.5 h-3.5" aria-hidden="true" />
-                </button>
-              )}
-            </div>
-
-            {/* Right: Status / Progress / Action */}
-            <div className="flex items-center justify-between md:justify-end gap-2.5 min-w-[140px]">
-              {isProcessing && (
-                <div className="flex items-center gap-2">
-                  <div className="w-20 bg-[#18181b] rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className="bg-[#c8f03c] h-full transition-all duration-300 rounded-full"
-                      style={{ width: `${job.progress}%` }}
-                    />
-                  </div>
-                  <span className="text-[11px] font-mono text-[#c8f03c] tabular-nums">{job.progress}%</span>
-                </div>
-              )}
-
-              {isDone && (
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-[11px] text-[#c8f03c] font-semibold">
-                    <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Done</span>
-                  </span>
-
-                  {canCompare && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveDiffJob(job)}
-                      aria-label={`Compare ${job.name}`}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold bg-[#18181b] hover:bg-white/[0.08] border border-white/[0.12] text-[#f0efe9] transition-colors active:scale-[0.98]"
-                    >
-                      <Columns2 className="w-3.5 h-3.5 text-[#60a5fa]" aria-hidden="true" />
-                      <span>Compare</span>
-                    </button>
-                  )}
-
-                  {job.outputFiles && job.outputFiles.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        job.outputFiles?.forEach((out) => triggerDownloadUrl(out.url, out.name));
-                      }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#c8f03c] hover:bg-[#b5dc30] text-[#0a0a0b] transition-all shadow-md shadow-[#c8f03c]/20 active:scale-[0.98]"
-                    >
-                      <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Download</span>
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {isError && (
-                <span className="flex items-center gap-1 text-[11px] text-[#f03c8c] font-medium" title={job.error}>
-                  <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>Failed</span>
-                </span>
-              )}
-
-              <button
-                type="button"
-                disabled={isProcessing}
-                onClick={() => onRemoveJob(job.id)}
-                title="Remove file"
-                aria-label={`Remove ${job.name}`}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8a8980] hover:text-[#f03c8c] hover:bg-[#f03c8c]/10 transition-colors disabled:opacity-40 active:scale-[0.98]"
-              >
-                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        );
-      })}
+      {isVirtualized ? (
+        <div
+          ref={viewportRef}
+          data-testid="virtual-queue-viewport"
+          onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+          style={{ maxHeight: `${VIRTUAL_VIEWPORT_HEIGHT}px` }}
+          className="w-full overflow-y-auto pr-1 space-y-2"
+        >
+          {topSpacer > 0 && <div style={{ height: `${topSpacer}px` }} aria-hidden="true" />}
+          {displayedJobs.map(renderRow)}
+          {bottomSpacer > 0 && <div style={{ height: `${bottomSpacer}px` }} aria-hidden="true" />}
+        </div>
+      ) : (
+        <div className="space-y-2.5">{displayedJobs.map(renderRow)}</div>
+      )}
 
       {activeSettingsJob && (
         <SettingsModal

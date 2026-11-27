@@ -2,24 +2,68 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { UploadCloud, Plus, FolderOpen } from "lucide-react";
-import { extractDroppedFiles, filterValidDroppedFiles } from "@/lib/utils/folderDrop";
+import {
+  extractDroppedFileEntries,
+  normalizeInputFileEntries,
+} from "@/lib/utils/folderDrop";
+import type { DroppedFileEntry } from "@/types/converter";
 
 interface DropZoneProps {
-  onFilesAdded: (files: File[]) => void;
+  onFilesAdded?: (files: File[]) => void;
+  onEntriesAdded?: (entries: DroppedFileEntry[]) => void;
   hasFiles: boolean;
 }
 
-export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
+interface LaunchParamsLike {
+  files?: { getFile: () => Promise<File> }[];
+}
+
+interface WindowWithLaunchQueue extends Window {
+  launchQueue?: {
+    setConsumer: (consumer: (launchParams: LaunchParamsLike) => void) => void;
+  };
+}
+
+export function DropZone({ onFilesAdded, onEntriesAdded, hasFiles }: DropZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
+  const emitEntries = (entries: DroppedFileEntry[]) => {
+    if (entries.length === 0) return;
+    if (onEntriesAdded) {
+      onEntriesAdded(entries);
+    } else if (onFilesAdded) {
+      onFilesAdded(entries.map((e) => e.file));
+    }
+  };
+
   useEffect(() => {
-    // Ensure webkitdirectory and directory exist in DOM across all React hydration paths
     if (folderInputRef.current) {
       folderInputRef.current.setAttribute("webkitdirectory", "");
       folderInputRef.current.setAttribute("directory", "");
     }
+  }, []);
+
+  // PWA OS File Handling consumer (Open with Pixshift)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const win = window as WindowWithLaunchQueue;
+    if (!win.launchQueue?.setConsumer) return;
+    win.launchQueue.setConsumer(async (launchParams) => {
+      if (!launchParams.files || launchParams.files.length === 0) return;
+      const loaded: File[] = [];
+      for (const handle of launchParams.files) {
+        try {
+          loaded.push(await handle.getFile());
+        } catch {
+          // Skip unreadable OS handle cleanly
+        }
+      }
+      const entries = normalizeInputFileEntries(loaded);
+      emitEntries(entries);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDrag = (e: React.DragEvent, state: boolean) => {
@@ -33,25 +77,23 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
     e.stopPropagation();
     setIsDragOver(false);
 
-    const extracted = await extractDroppedFiles(e.dataTransfer);
-    if (extracted.length > 0) {
-      onFilesAdded(extracted);
-    }
+    const extracted = await extractDroppedFileEntries(e.dataTransfer);
+    emitEntries(extracted);
   };
 
-  // Clipboard paste support
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       if (e.clipboardData?.files && e.clipboardData.files.length > 0) {
-        const valid = filterValidDroppedFiles(Array.from(e.clipboardData.files));
-        if (valid.length > 0) {
-          onFilesAdded(valid);
+        const entries = normalizeInputFileEntries(e.clipboardData.files);
+        if (entries.length > 0) {
+          emitEntries(entries);
         }
       }
     };
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, [onFilesAdded]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onEntriesAdded, onFilesAdded]);
 
   const hiddenInputs = (
     <>
@@ -63,8 +105,7 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
         aria-label="Select files"
         onChange={(e) => {
           if (e.target.files) {
-            const valid = filterValidDroppedFiles(Array.from(e.target.files));
-            if (valid.length > 0) onFilesAdded(valid);
+            emitEntries(normalizeInputFileEntries(e.target.files));
           }
           e.target.value = "";
         }}
@@ -79,8 +120,7 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
         aria-label="Select folder"
         onChange={(e) => {
           if (e.target.files) {
-            const valid = filterValidDroppedFiles(Array.from(e.target.files));
-            if (valid.length > 0) onFilesAdded(valid);
+            emitEntries(normalizeInputFileEntries(e.target.files));
           }
           e.target.value = "";
         }}
@@ -106,7 +146,7 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
             }`}
           >
             <Plus className="w-4 h-4 text-[#c8f03c]" aria-hidden="true" />
-            <span className="hidden sm:inline">Drop more files or click to browse (Ctrl+V to paste)</span>
+            <span className="hidden sm:inline">Drop more files or folders (Ctrl+V to paste)</span>
             <span className="sm:hidden">Tap to add more files</span>
           </button>
 
@@ -172,7 +212,7 @@ export function DropZone({ onFilesAdded, hasFiles }: DropZoneProps) {
             Drop your files here
           </h2>
           <p className="text-xs text-[#9a9992]">
-            or <span className="text-[#c8f03c] font-semibold underline underline-offset-4">browse files</span> from your computer · Zero uploads to external servers
+            or <span className="text-[#c8f03c] font-semibold underline underline-offset-4">browse files</span> or nested folders · Zero uploads to external servers
           </p>
         </div>
 

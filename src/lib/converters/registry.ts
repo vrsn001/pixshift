@@ -25,10 +25,11 @@ export const FORMAT_REGISTRY: Record<SupportedFormat, FormatOption> = {
   flac: { format: "flac", label: "FLAC", description: "Free Lossless Audio Codec", category: "audio" },
 
   pdf: { format: "pdf", label: "PDF", description: "Portable Document Format", category: "document" },
+  txt: { format: "txt", label: "TXT (OCR)", description: "Extract text via offline OCR engine", category: "image" },
 };
 
 export const AVAILABLE_TARGETS: Record<FileCategory, SupportedFormat[]> = {
-  image: ["webp", "png", "jpeg", "avif", "bmp", "ico", "pdf"],
+  image: ["webp", "png", "jpeg", "avif", "bmp", "ico", "pdf", "txt"],
   video: ["mp4", "webm", "gif", "mp3", "wav", "mkv", "avi", "mov"],
   audio: ["mp3", "wav", "ogg", "aac", "m4a", "flac"],
   // Removed "pdf" from document targets — PDF extraction outputs PNG or JPEG pages

@@ -31,6 +31,38 @@ const assets = [
     src: path.join(projectRoot, "node_modules", "pdfjs-dist", "build", "pdf.worker.min.mjs"),
     dest: path.join(projectRoot, "public", "pdfjs", "pdf.worker.min.mjs"),
   },
+  {
+    src: path.join(projectRoot, "node_modules", "tesseract.js", "dist", "worker.min.js"),
+    dest: path.join(projectRoot, "public", "tesseract", "worker.min.js"),
+  },
+  {
+    src: path.join(projectRoot, "node_modules", "tesseract.js-core", "tesseract-core-lstm.wasm.js"),
+    dest: path.join(projectRoot, "public", "tesseract", "tesseract-core-lstm.wasm.js"),
+  },
+  {
+    src: path.join(projectRoot, "node_modules", "tesseract.js-core", "tesseract-core-lstm.wasm"),
+    dest: path.join(projectRoot, "public", "tesseract", "tesseract-core-lstm.wasm"),
+  },
+  {
+    src: path.join(projectRoot, "node_modules", "tesseract.js-core", "tesseract-core-simd-lstm.wasm.js"),
+    dest: path.join(projectRoot, "public", "tesseract", "tesseract-core-simd-lstm.wasm.js"),
+  },
+  {
+    src: path.join(projectRoot, "node_modules", "tesseract.js-core", "tesseract-core-simd-lstm.wasm"),
+    dest: path.join(projectRoot, "public", "tesseract", "tesseract-core-simd-lstm.wasm"),
+  },
+  {
+    src: path.join(projectRoot, "node_modules", "tesseract.js-core", "tesseract-core-relaxedsimd-lstm.wasm.js"),
+    dest: path.join(projectRoot, "public", "tesseract", "tesseract-core-relaxedsimd-lstm.wasm.js"),
+  },
+  {
+    src: path.join(projectRoot, "node_modules", "tesseract.js-core", "tesseract-core-relaxedsimd-lstm.wasm"),
+    dest: path.join(projectRoot, "public", "tesseract", "tesseract-core-relaxedsimd-lstm.wasm"),
+  },
+  {
+    src: path.join(projectRoot, "node_modules", "@tesseract.js-data", "eng", "4.0.0", "eng.traineddata.gz"),
+    dest: path.join(projectRoot, "public", "tesseract", "eng.traineddata.gz"),
+  },
 ];
 
 for (const { src, dest } of assets) {

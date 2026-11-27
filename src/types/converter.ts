@@ -1,6 +1,6 @@
 export type FileCategory = "image" | "video" | "audio" | "document";
 
-export type ImageFormat = "webp" | "png" | "jpeg" | "jpg" | "avif" | "bmp" | "ico" | "svg" | "pdf";
+export type ImageFormat = "webp" | "png" | "jpeg" | "jpg" | "avif" | "bmp" | "ico" | "svg" | "pdf" | "txt";
 export type VideoFormat = "mp4" | "webm" | "mkv" | "avi" | "mov" | "gif" | "mp3" | "wav";
 export type AudioFormat = "mp3" | "wav" | "ogg" | "aac" | "m4a" | "flac";
 export type DocumentFormat = "png" | "jpeg";
@@ -107,6 +107,9 @@ export interface ConversionSettings {
   watermark?: WatermarkSettings | null;
   rename?: RenameSettings | null;
   gifLoop?: number;
+  reverseGif?: boolean;
+  gifCaption?: string;
+  ocrLanguage?: string;
 }
 
 export type JobStatus = "pending" | "processing" | "done" | "error";
@@ -135,10 +138,11 @@ export interface ConversionJob {
   sourceDimensions?: { width: number; height: number } | null;
   durationSec?: number | null;
   exifInfo?: ExifInfo | null;
-  engineUsed?: "webcodecs" | "ffmpeg" | "canvas" | "pdf" | "binary";
+  engineUsed?: "webcodecs" | "ffmpeg" | "canvas" | "pdf" | "binary" | "ocr";
   relativePath?: string;
   folderPath?: string;
   targetUnreachableWarning?: string;
+  ocrText?: string;
 }
 
 export interface FormatOption {

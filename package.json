@@ -19,6 +19,8 @@
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "@number-flow/react": "^0.6.2",
+    "@tesseract.js-data/eng": "^1.0.0",
+    "@vercel/blob": "^2.9.0",
     "clsx": "^2.1.1",
     "heic2any": "^0.0.4",
     "jszip": "^3.10.1",
@@ -29,7 +31,8 @@
     "pdfjs-dist": "^4.9.155",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.0.2"
+    "tailwind-merge": "^3.0.2",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",

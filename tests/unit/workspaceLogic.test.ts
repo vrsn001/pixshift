@@ -221,4 +221,23 @@ describe("workspaceHelpers", () => {
       )
     ).toBe(true);
   });
+
+  it("applies built-in pipeline recipes across matching categories cleanly", async () => {
+    const { BUILT_IN_RECIPES, applyRecipeToJobs } = await import("@/lib/workspace/recipes");
+    const jobs = [
+      makeJob({ id: "img1", category: "image", targetFormat: "png" }),
+      makeJob({ id: "aud1", category: "audio", targetFormat: "wav", inputFormat: "mp3" }),
+    ];
+
+    const webpRecipe = BUILT_IN_RECIPES.find((r) => r.id === "web-webp");
+    expect(webpRecipe).toBeDefined();
+
+    const updated = applyRecipeToJobs(jobs, webpRecipe!);
+    expect(updated.updatedCount).toBe(1);
+    expect(updated.jobs[0]?.targetFormat).toBe("webp");
+    expect(updated.jobs[0]?.settings.quality).toBe(82);
+    expect(updated.jobs[0]?.settings.width).toBe(1920);
+    expect(updated.jobs[0]?.settings.stripExif).toBe(true);
+    expect(updated.jobs[1]?.targetFormat).toBe("wav");
+  });
 });

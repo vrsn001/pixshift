@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { PwaRegistrar } from "@/components/PwaRegistrar";
 
 export function Header() {
   return (
@@ -32,7 +33,8 @@ export function Header() {
       </div>
 
       {/* Nav Right */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 sm:gap-5">
+        <PwaRegistrar />
         <a href="#faq" className="hidden sm:inline-block text-xs font-medium text-[#9a9992] hover:text-[#f0efe9] transition-colors">
           FAQ
         </a>

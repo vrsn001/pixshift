@@ -67,7 +67,8 @@ export function buildFfmpegArgs(
   inputName: string,
   outputName: string,
   targetFormat: string,
-  settings: ConversionSettings
+  settings: ConversionSettings,
+  captionOverlayName?: string
 ): string[] {
   const trim = validateTrimRange(settings.trimStart, settings.trimEnd);
   const args: string[] = [];
@@ -90,10 +91,27 @@ export function buildFfmpegArgs(
       args.push("-b:a", settings.audioBitrate);
     }
   } else if (fmt === "gif") {
-    args.push(
-      "-vf",
-      "fps=12,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
-    );
+    const fps = Math.max(1, Math.min(30, Math.round(settings.fps ?? 12)));
+    const scaleWidth = settings.width && settings.width > 0 ? Math.round(settings.width) : 480;
+    const loopCount =
+      settings.gifLoop !== undefined && Number.isFinite(settings.gifLoop)
+        ? Math.max(0, Math.round(settings.gifLoop))
+        : 0;
+    const revStep = settings.reverseGif ? ",reverse" : "";
+
+    if (captionOverlayName) {
+      args.push("-i", captionOverlayName);
+      args.push(
+        "-filter_complex",
+        `[0:v]fps=${fps},scale=${scaleWidth}:-1:flags=lanczos${revStep}[base];[base][1:v]overlay=(W-w)/2:H-h-12,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse`
+      );
+    } else {
+      args.push(
+        "-vf",
+        `fps=${fps},scale=${scaleWidth}:-1:flags=lanczos${revStep},split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse`
+      );
+    }
+    args.push("-loop", String(loopCount));
   } else {
     if (settings.width && settings.height) {
       if (settings.maintainAspectRatio) {
@@ -175,6 +193,40 @@ export function preloadFFmpeg(): void {
   });
 }
 
+async function renderGifCaptionOverlayPng(
+  caption: string,
+  width: number
+): Promise<Uint8Array | null> {
+  const trimmed = caption.trim();
+  if (!trimmed || typeof document === "undefined") return null;
+
+  const canvasW = Math.max(200, Math.min(1280, Math.round(width || 480)));
+  const fontSize = Math.max(16, Math.round(canvasW * 0.055));
+  const canvasH = Math.round(fontSize * 2);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.clearRect(0, 0, canvasW, canvasH);
+  ctx.font = `800 ${fontSize}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineWidth = Math.max(3, Math.round(fontSize * 0.18));
+  ctx.strokeStyle = "rgba(10, 10, 11, 0.92)";
+  ctx.strokeText(trimmed, canvasW / 2, canvasH / 2, canvasW - 24);
+  ctx.fillStyle = "#c8f03c";
+  ctx.fillText(trimmed, canvasW / 2, canvasH / 2, canvasW - 24);
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob((b) => resolve(b), "image/png")
+  );
+  if (!blob) return null;
+  return new Uint8Array(await blob.arrayBuffer());
+}
+
 async function transcodeWithFfmpeg(
   file: File,
   targetFormat: string,
@@ -188,10 +240,25 @@ async function transcodeWithFfmpeg(
   const inputExt = file.name.split(".").pop()?.toLowerCase() ?? "tmp";
   const inputName = `input_${uid}.${inputExt}`;
   const outputName = `output_${uid}.${targetFormat}`;
+  const captionOverlayName =
+    targetFormat.toLowerCase() === "gif" && settings.gifCaption?.trim()
+      ? `caption_${uid}.png`
+      : undefined;
 
   onProgress?.(5);
 
   await ffmpeg.writeFile(inputName, await fetchFile(file));
+  let wroteCaption = false;
+  if (captionOverlayName && settings.gifCaption) {
+    const pngBytes = await renderGifCaptionOverlayPng(
+      settings.gifCaption,
+      settings.width ?? 480
+    );
+    if (pngBytes) {
+      await ffmpeg.writeFile(captionOverlayName, pngBytes);
+      wroteCaption = true;
+    }
+  }
   onProgress?.(20);
 
   const progressHandler = ({ progress }: { progress: number }) => {
@@ -201,7 +268,13 @@ async function transcodeWithFfmpeg(
   ffmpeg.on("progress", progressHandler);
 
   try {
-    const args = buildFfmpegArgs(inputName, outputName, targetFormat, settings);
+    const args = buildFfmpegArgs(
+      inputName,
+      outputName,
+      targetFormat,
+      settings,
+      wroteCaption ? captionOverlayName : undefined
+    );
     const exitCode = await ffmpeg.exec(args);
     if (exitCode !== 0) {
       throw new Error(`FFmpeg transcode failed with exit code ${exitCode}`);
@@ -231,6 +304,11 @@ async function transcodeWithFfmpeg(
     try {
       await ffmpeg.deleteFile(inputName);
     } catch { /* ignore cleanup */ }
+    if (wroteCaption && captionOverlayName) {
+      try {
+        await ffmpeg.deleteFile(captionOverlayName);
+      } catch { /* ignore cleanup */ }
+    }
     try {
       await ffmpeg.deleteFile(outputName);
     } catch { /* ignore cleanup */ }

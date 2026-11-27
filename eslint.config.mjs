@@ -17,6 +17,8 @@ const eslintConfig = [
       "legacy/**",
       "public/ffmpeg/**",
       "public/pdfjs/**",
+      "public/tesseract/**",
+      "public/sw.js",
       "playwright-report/**",
       "test-results/**",
       "tests/fixtures/generated/**",
