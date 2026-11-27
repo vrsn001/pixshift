@@ -9,11 +9,82 @@ export type SupportedFormat = ImageFormat | VideoFormat | AudioFormat | Document
 
 export type VideoQualityPreset = "high" | "balanced" | "compact";
 
+export interface DroppedFileEntry {
+  file: File;
+  relativePath: string;
+  folderPath: string;
+}
+
+export interface ExifTagEntry {
+  tag: string;
+  label: string;
+  value: string;
+  group: "camera" | "exposure" | "date" | "gps" | "other";
+}
+
 export interface ExifInfo {
   hasExif: boolean;
   hasXmp: boolean;
   markers: string[];
   orientation?: number;
+  tags?: ExifTagEntry[];
+  hasGps?: boolean;
+}
+
+export interface ImageCropRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  unit: "px" | "percent";
+}
+
+export type WatermarkPosition =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right"
+  | "center"
+  | "tile";
+
+export interface WatermarkSettings {
+  enabled: boolean;
+  mode: "text" | "image";
+  text?: string;
+  imageDataUrl?: string;
+  position: WatermarkPosition;
+  opacity: number;
+  scale: number;
+  color?: string;
+}
+
+export interface RenameSettings {
+  enabled: boolean;
+  pattern: string;
+  prefix?: string;
+  suffix?: string;
+  startIndex?: number;
+  zeroPad?: number;
+}
+
+export type ZipStructureMode = "preserve" | "flatten";
+
+export interface BatchTelemetrySnapshot {
+  totalCount: number;
+  pendingCount: number;
+  processingCount: number;
+  completedCount: number;
+  errorCount: number;
+  overallProgressPct: number;
+  totalInputBytes: number;
+  completedInputBytes: number;
+  completedOutputBytes: number;
+  savedBytes: number;
+  savedPercent: number;
+  filesPerSec: number;
+  mbPerSec: number;
+  elapsedMs: number;
+  zipProgressPct?: number | null;
 }
 
 export interface ConversionSettings {
@@ -28,6 +99,14 @@ export interface ConversionSettings {
   videoQualityPreset?: VideoQualityPreset;
   videoBitrateMbps?: number | null;
   stripExif?: boolean;
+  targetSizeKb?: number | null;
+  crop?: ImageCropRect | null;
+  rotateDeg?: 0 | 90 | 180 | 270;
+  flipH?: boolean;
+  flipV?: boolean;
+  watermark?: WatermarkSettings | null;
+  rename?: RenameSettings | null;
+  gifLoop?: number;
 }
 
 export type JobStatus = "pending" | "processing" | "done" | "error";
@@ -57,6 +136,9 @@ export interface ConversionJob {
   durationSec?: number | null;
   exifInfo?: ExifInfo | null;
   engineUsed?: "webcodecs" | "ffmpeg" | "canvas" | "pdf" | "binary";
+  relativePath?: string;
+  folderPath?: string;
+  targetUnreachableWarning?: string;
 }
 
 export interface FormatOption {
