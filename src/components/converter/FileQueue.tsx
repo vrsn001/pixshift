@@ -15,7 +15,7 @@ import {
 import { ConversionJob, ConversionSettings, SupportedFormat } from "@/types/converter";
 import { FormatSelector } from "./FormatSelector";
 import { SettingsModal } from "./SettingsModal";
-import { triggerDownload } from "@/lib/utils/archive";
+import { triggerDownloadUrl } from "@/lib/utils/archive";
 
 interface FileQueueProps {
   jobs: ConversionJob[];
@@ -36,18 +36,18 @@ export function FileQueue({ jobs, onUpdateFormat, onUpdateSettings, onRemoveJob 
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "video":
-        return <FileVideo className="w-4 h-4 text-[#f03c8c]" />;
+        return <FileVideo className="w-4 h-4 text-[#60a5fa]" aria-hidden="true" />;
       case "audio":
-        return <FileAudio className="w-4 h-4 text-[#c8f03c]" />;
+        return <FileAudio className="w-4 h-4 text-[#c8f03c]" aria-hidden="true" />;
       case "document":
-        return <FileText className="w-4 h-4 text-[#f0efe9]" />;
+        return <FileText className="w-4 h-4 text-[#f0efe9]" aria-hidden="true" />;
       default:
-        return <FileImage className="w-4 h-4 text-[#c8f03c]" />;
+        return <FileImage className="w-4 h-4 text-[#c8f03c]" aria-hidden="true" />;
     }
   };
 
   return (
-    <div className="w-full space-y-3">
+    <div className="w-full space-y-2.5">
       {jobs.map((job) => {
         const isDone = job.status === "done";
         const isProcessing = job.status === "processing";
@@ -56,11 +56,11 @@ export function FileQueue({ jobs, onUpdateFormat, onUpdateSettings, onRemoveJob 
         return (
           <div
             key={job.id}
-            className="w-full rounded-2xl bg-[#111113] border border-white/[0.08] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-white/[0.16]"
+            className="w-full rounded-xl bg-[#111113] border border-white/[0.08] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-white/[0.16]"
           >
             {/* Left: File Info */}
             <div className="flex items-center gap-3.5 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-[#18181b] border border-white/[0.07] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-[#18181b] border border-white/[0.08] flex items-center justify-center shrink-0">
                 {getCategoryIcon(job.category)}
               </div>
               <div className="min-w-0 flex-1">
@@ -68,13 +68,13 @@ export function FileQueue({ jobs, onUpdateFormat, onUpdateSettings, onRemoveJob 
                   <span className="font-semibold text-xs text-[#f0efe9] truncate max-w-[140px] sm:max-w-[200px] md:max-w-sm">
                     {job.name}
                   </span>
-                  <span className="text-[10px] uppercase font-bold text-[#9a9992] bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">
+                  <span className="text-[10px] uppercase font-mono font-bold text-[#9a9992] bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.08]">
                     {job.inputFormat}
                   </span>
                 </div>
-                <div className="text-[11px] text-[#5a5952] mt-0.5">
+                <div className="text-[11px] font-mono text-[#8a8980] mt-0.5 tabular-nums">
                   {formatFileSize(job.size)}
-                  {job.durationMs && ` · ${(job.durationMs / 1000).toFixed(1)}s`}
+                  {job.durationMs !== undefined && ` · ${(job.durationMs / 1000).toFixed(1)}s`}
                 </div>
               </div>
             </div>
@@ -95,11 +95,12 @@ export function FileQueue({ jobs, onUpdateFormat, onUpdateSettings, onRemoveJob 
                 <button
                   type="button"
                   title="Configure resolution and quality"
+                  aria-label={`Configure settings for ${job.name}`}
                   disabled={isProcessing}
                   onClick={() => setActiveSettingsJob(job)}
-                  className="w-8 h-8 rounded-lg bg-[#18181b] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[#9a9992] hover:text-[#c8f03c] transition-colors disabled:opacity-40"
+                  className="w-8 h-8 rounded-lg bg-[#18181b] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[#9a9992] hover:text-[#c8f03c] transition-colors disabled:opacity-40 active:scale-[0.98]"
                 >
-                  <Sliders className="w-3.5 h-3.5" />
+                  <Sliders className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -114,25 +115,25 @@ export function FileQueue({ jobs, onUpdateFormat, onUpdateSettings, onRemoveJob 
                       style={{ width: `${job.progress}%` }}
                     />
                   </div>
-                  <span className="text-[11px] font-mono text-[#c8f03c]">{job.progress}%</span>
+                  <span className="text-[11px] font-mono text-[#c8f03c] tabular-nums">{job.progress}%</span>
                 </div>
               )}
 
               {isDone && (
                 <div className="flex items-center gap-2">
                   <span className="flex items-center gap-1 text-[11px] text-[#c8f03c] font-semibold">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                     <span>Done</span>
                   </span>
                   {job.outputFiles && job.outputFiles.length > 0 && (
                     <button
                       type="button"
                       onClick={() => {
-                        job.outputFiles?.forEach((out) => triggerDownload(out.blob, out.name));
+                        job.outputFiles?.forEach((out) => triggerDownloadUrl(out.url, out.name));
                       }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#c8f03c] hover:bg-[#b5dc30] text-[#0a0a0b] transition-all shadow-md shadow-[#c8f03c]/20"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#c8f03c] hover:bg-[#b5dc30] text-[#0a0a0b] transition-all shadow-md shadow-[#c8f03c]/20 active:scale-[0.98]"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>Download</span>
                     </button>
                   )}
@@ -141,7 +142,7 @@ export function FileQueue({ jobs, onUpdateFormat, onUpdateSettings, onRemoveJob 
 
               {isError && (
                 <span className="flex items-center gap-1 text-[11px] text-[#f03c8c] font-medium" title={job.error}>
-                  <AlertCircle className="w-3.5 h-3.5" />
+                  <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Failed</span>
                 </span>
               )}
@@ -151,9 +152,10 @@ export function FileQueue({ jobs, onUpdateFormat, onUpdateSettings, onRemoveJob 
                 disabled={isProcessing}
                 onClick={() => onRemoveJob(job.id)}
                 title="Remove file"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#5a5952] hover:text-[#f03c8c] hover:bg-[#f03c8c]/10 transition-colors disabled:opacity-40"
+                aria-label={`Remove ${job.name}`}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8a8980] hover:text-[#f03c8c] hover:bg-[#f03c8c]/10 transition-colors disabled:opacity-40 active:scale-[0.98]"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             </div>
           </div>

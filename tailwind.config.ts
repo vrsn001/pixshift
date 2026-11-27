@@ -18,7 +18,7 @@ const config: Config = {
         text: {
           DEFAULT: "#f0efe9",
           secondary: "#9a9992",
-          muted: "#5a5952",
+          muted: "#8a8980",
         },
         acid: {
           DEFAULT: "#c8f03c",
@@ -26,24 +26,24 @@ const config: Config = {
           glow: "rgba(200, 240, 60, 0.15)",
           pink: "#f03c8c",
         },
+        cobalt: {
+          DEFAULT: "#2563eb",
+          bright: "#60a5fa",
+        },
       },
       fontFamily: {
         display: ["var(--font-syne)", "Syne", "sans-serif"],
         body: ["var(--font-dm-sans)", "DM Sans", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "monospace"],
       },
       animation: {
-        "float-1": "float1 14s ease-in-out infinite",
-        "float-2": "float2 18s ease-in-out infinite reverse",
+        "fade-in": "fadeIn 150ms ease-out",
         "pulse-slow": "pulse 2s ease-in-out infinite",
       },
       keyframes: {
-        float1: {
-          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
-          "50%": { transform: "translate(25px, -15px) scale(1.04)" },
-        },
-        float2: {
-          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
-          "50%": { transform: "translate(-20px, 20px) scale(0.96)" },
+        fadeIn: {
+          "0%": { opacity: "0", transform: "translateY(4px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
       },
     },

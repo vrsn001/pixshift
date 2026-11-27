@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Syne, DM_Sans } from "next/font/google";
+import { Syne, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 const syne = Syne({
@@ -11,8 +11,15 @@ const syne = Syne({
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-dm-sans",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mono",
   display: "swap",
 });
 
@@ -26,11 +33,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://pixyshift.vercel.app"),
   title: {
-    default: "Pixshift — Universal In-Browser File Converter (Free & Private)",
+    default: "Pixshift — Client-Side Image, Video, Audio & PDF Converter",
     template: "%s | Pixshift",
   },
   description:
-    "Convert any image, video, audio, or PDF directly in your browser. 100% private, zero uploads, zero server tracking, no daily limits — powered by WebAssembly.",
+    "Convert images, video, audio, and PDFs directly in your browser. Your files stay on your disk with WebAssembly FFmpeg, WebCodecs, Canvas, and PDF processing.",
   keywords: [
     "file converter",
     "image converter",
@@ -38,7 +45,7 @@ export const metadata: Metadata = {
     "audio converter",
     "pdf converter",
     "webp converter",
-    "cloudconvert alternative",
+    "exif stripper",
     "free online converter",
     "client-side file converter",
     "heic to png",
@@ -54,9 +61,7 @@ export const metadata: Metadata = {
     canonical: "https://pixyshift.vercel.app",
   },
   icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     shortcut: "/icon.svg",
     apple: "/icon.svg",
   },
@@ -65,24 +70,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://pixyshift.vercel.app",
     siteName: "Pixshift",
-    title: "Pixshift — Convert Any File to Anything",
+    title: "Pixshift — Convert Images, Video, Audio & PDFs on Your Device",
     description:
-      "100% browser-based, zero uploads, unlimited and free forever. Convert images, videos, audio, and documents locally on your device.",
-    images: [
-      {
-        url: "/logo.svg",
-        width: 1200,
-        height: 630,
-        alt: "Pixshift — Universal In-Browser File Converter",
-      },
-    ],
+      "Runs in your browser using WebAssembly, WebCodecs, and Canvas. Nothing gets uploaded because your browser does the work.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pixshift — Universal In-Browser File Converter",
-    description: "Convert any file locally with WebAssembly. 100% private, zero server uploads, free forever.",
+    title: "Pixshift — Client-Side File Converter",
+    description: "Convert images, video, audio, and PDFs directly in your browser. Nothing gets uploaded.",
     creator: "@lakshayyy",
-    images: ["/logo.svg"],
   },
   robots: {
     index: true,
@@ -113,7 +109,8 @@ export default function RootLayout({
         "applicationCategory": "MultimediaApplication",
         "operatingSystem": "All",
         "browserRequirements": "Requires WebAssembly and HTML5 Canvas support",
-        "description": "Universal in-browser file converter supporting Images (WebP, PNG, JPEG, AVIF, HEIC, SVG), Video (MP4, WebM, GIF), Audio (MP3, WAV, AAC), and PDF documents with zero server uploads.",
+        "description":
+          "Client-side media and document converter supporting Images (WebP, PNG, JPEG, AVIF, BMP, ICO, HEIC), Video (MP4, WebM, GIF), Audio (MP3, WAV, AAC), and PDF documents directly in your browser.",
         "offers": {
           "@type": "Offer",
           "price": "0",
@@ -134,7 +131,8 @@ export default function RootLayout({
             "name": "Do my files ever get uploaded to a server?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Never. Pixshift operates 100% locally on your computer inside your browser using WebAssembly and HTML5 Canvas. Your files never touch external servers.",
+              "text":
+                "Never. Pixshift operates locally inside your browser using WebAssembly, WebCodecs, and HTML5 Canvas. Your files stay on your device.",
             },
           },
           {
@@ -142,7 +140,8 @@ export default function RootLayout({
             "name": "Is there any file size limit or daily quota?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. Pixshift is unlimited and free forever with no credit quotas or artificial paywalls.",
+              "text":
+                "No. Pixshift has no artificial file-count caps or paywalls. The practical ceiling is your browser's available memory.",
             },
           },
           {
@@ -150,7 +149,8 @@ export default function RootLayout({
             "name": "How does Pixshift convert video and audio without a server?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Pixshift runs WebAssembly-compiled FFmpeg inside dedicated Web Workers, enabling full-powered transcoding directly on your device CPU.",
+              "text":
+                "Pixshift uses browser hardware WebCodecs where supported and a self-hosted WebAssembly FFmpeg engine directly inside your browser tab.",
             },
           },
           {
@@ -158,7 +158,8 @@ export default function RootLayout({
             "name": "Can I convert multiple images into a single PDF document?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes, Pixshift includes a 'Merge images to single PDF' feature that compiles multiple selected images into a single ordered PDF file.",
+              "text":
+                "Yes. Add multiple images targeting PDF and enable the 'Merge images to single PDF' toggle in the action toolbar.",
             },
           },
         ],
@@ -167,7 +168,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${syne.variable} ${dmSans.variable} dark`}>
+    <html lang="en" className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} dark`}>
       <head>
         <script
           type="application/ld+json"

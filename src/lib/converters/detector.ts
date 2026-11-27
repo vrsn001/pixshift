@@ -40,38 +40,57 @@ const EXTENSION_MAP: Record<string, { category: FileCategory; format: string }> 
   pdf: { category: "document", format: "pdf" },
 };
 
+export type FileDetectionResult =
+  | {
+      supported: true;
+      category: FileCategory;
+      inputFormat: string;
+      defaultTarget: SupportedFormat;
+    }
+  | {
+      supported: false;
+      inputFormat: string;
+      reason: string;
+    };
+
 export function getFileExtension(filename: string): string {
   const parts = filename.split(".");
-  return parts.length > 1 ? parts.pop()!.toLowerCase().trim() : "";
+  return parts.length > 1 ? (parts.pop() ?? "").toLowerCase().trim() : "";
 }
 
-export function detectFileInfo(file: File): { category: FileCategory; inputFormat: string; defaultTarget: SupportedFormat } {
+export function detectFileInfo(file: File): FileDetectionResult {
   const ext = getFileExtension(file.name);
   const match = EXTENSION_MAP[ext];
 
   if (match) {
     return {
+      supported: true,
       category: match.category,
       inputFormat: match.format,
       defaultTarget: match.format === "webp" ? "png" : DEFAULT_TARGET_MAP[match.category],
     };
   }
 
-  // Fallback to MIME type detection
+  // Fallback to recognized MIME types only
   const mime = file.type.toLowerCase();
   if (mime.startsWith("image/")) {
-    return { category: "image", inputFormat: ext || "image", defaultTarget: "webp" };
+    const format = ext || mime.slice("image/".length) || "image";
+    return { supported: true, category: "image", inputFormat: format, defaultTarget: format === "webp" ? "png" : "webp" };
   }
   if (mime.startsWith("video/")) {
-    return { category: "video", inputFormat: ext || "video", defaultTarget: "mp4" };
+    return { supported: true, category: "video", inputFormat: ext || "video", defaultTarget: "mp4" };
   }
   if (mime.startsWith("audio/")) {
-    return { category: "audio", inputFormat: ext || "audio", defaultTarget: "mp3" };
+    return { supported: true, category: "audio", inputFormat: ext || "audio", defaultTarget: "mp3" };
   }
   if (mime === "application/pdf") {
-    return { category: "document", inputFormat: "pdf", defaultTarget: "png" };
+    return { supported: true, category: "document", inputFormat: "pdf", defaultTarget: "png" };
   }
 
-  // Generic fallback
-  return { category: "image", inputFormat: ext || "unknown", defaultTarget: "webp" };
+  const label = ext ? `.${ext}` : mime || "unknown type";
+  return {
+    supported: false,
+    inputFormat: ext || "unknown",
+    reason: `Unsupported file "${file.name}" (${label}).`,
+  };
 }

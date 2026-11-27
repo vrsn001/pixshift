@@ -6,101 +6,48 @@
   --bg: #0a0a0b;
   --bg2: #111113;
   --bg3: #18181b;
-  --border: rgba(255, 255, 255, 0.07);
-  --border-hover: rgba(255, 255, 255, 0.15);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.16);
   --text: #f0efe9;
   --text2: #9a9992;
-  --text3: #5a5952;
+  --text3: #8a8980;
   --accent: #c8f03c;
   --accent-glow: rgba(200, 240, 60, 0.18);
   --accent2: #f03c8c;
+  --cobalt: #2563eb;
+  --cobalt-bright: #60a5fa;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-dm-sans), 'DM Sans', sans-serif;
+  font-family: var(--font-dm-sans), "DM Sans", sans-serif;
   overflow-x: hidden;
 }
 
-/* Background grid overlay */
+/* Precision instrument micro-grid overlay */
 .hero-grid {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 15%, black 25%, transparent 100%);
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 15%, black 25%, transparent 100%);
 }
 
-/* Ambient glowing blobs */
-.blob {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(90px);
-  pointer-events: none;
-  z-index: 0;
-  will-change: transform;
-}
-
-@media (max-width: 640px) {
-  .b2, .b3 { display: none; }
-}
-
-.b1 {
-  width: min(600px, 90vw);
-  height: min(600px, 90vw);
-  top: -200px;
-  left: -100px;
-  background: radial-gradient(circle, rgba(200, 240, 60, 0.16) 0%, transparent 70%);
-  animation: float1 14s ease-in-out infinite;
-}
-
-.b2 {
-  width: min(500px, 80vw);
-  height: min(500px, 80vw);
-  top: 150px;
-  right: -150px;
-  background: radial-gradient(circle, rgba(240, 60, 140, 0.12) 0%, transparent 70%);
-  animation: float2 18s ease-in-out infinite reverse;
-}
-
-.b3 {
-  width: min(450px, 75vw);
-  height: min(450px, 75vw);
-  bottom: -150px;
-  left: 25%;
-  background: radial-gradient(circle, rgba(60, 100, 240, 0.08) 0%, transparent 70%);
-}
-
-@keyframes float1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(30px, -20px) scale(1.05); }
-}
-
-@keyframes float2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-25px, 25px) scale(0.95); }
-}
-
-/* Cards & Panels */
-.acid-card {
-  background: rgba(17, 17, 19, 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  transition: all 0.2s ease;
-}
-
-.acid-card:hover {
-  border-color: var(--border-hover);
-}
-
-.acid-card-active {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 30px var(--accent-glow);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Custom sleek acid scrollbar */

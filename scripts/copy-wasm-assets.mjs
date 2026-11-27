@@ -16,6 +16,18 @@ const assets = [
     dest: path.join(projectRoot, "public", "ffmpeg", "ffmpeg-core.wasm"),
   },
   {
+    src: path.join(projectRoot, "node_modules", "@ffmpeg", "ffmpeg", "dist", "esm", "worker.js"),
+    dest: path.join(projectRoot, "public", "ffmpeg", "worker.js"),
+  },
+  {
+    src: path.join(projectRoot, "node_modules", "@ffmpeg", "ffmpeg", "dist", "esm", "const.js"),
+    dest: path.join(projectRoot, "public", "ffmpeg", "const.js"),
+  },
+  {
+    src: path.join(projectRoot, "node_modules", "@ffmpeg", "ffmpeg", "dist", "esm", "errors.js"),
+    dest: path.join(projectRoot, "public", "ffmpeg", "errors.js"),
+  },
+  {
     src: path.join(projectRoot, "node_modules", "pdfjs-dist", "build", "pdf.worker.min.mjs"),
     dest: path.join(projectRoot, "public", "pdfjs", "pdf.worker.min.mjs"),
   },

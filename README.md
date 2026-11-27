@@ -1,50 +1,33 @@
-# Pixshift (v2.0) — Universal In-Browser File Converter
+# Pixshift — Universal In-Browser File Converter
 
-> **100% Client-Side · Zero Server Uploads · WebAssembly Powered · Free Forever**
+> **100% Client-Side · Zero Server Uploads · WebCodecs & Self-Hosted WebAssembly · Free Forever**
 
-Pixshift is a universal, privacy-first file conversion studio that runs entirely in your browser. Unlike traditional converters like CloudConvert that enforce upload quotas, daily limits, or queue times, Pixshift performs all conversions locally on your hardware using multi-threaded **WebAssembly (FFmpeg, Libheif)**, **OffscreenCanvas**, and **Web Workers**.
-
----
-
-## ✨ Features
-
-- **Universal Multi-Format Support:**
-  - **Images:** PNG, JPEG/JPG, WebP, AVIF, BMP, ICO, SVG, Apple HEIC/HEIF (`heic2any`).
-  - **Video:** MP4 (H.264), WebM (VP9), MKV, AVI, MOV, FLV, animated GIF (with palettegen).
-  - **Audio:** MP3, WAV, OGG, AAC, M4A, FLAC, and video-to-audio extraction (e.g., MP4 → MP3).
-  - **Documents:** Multi-image to single PDF merging, and multi-page PDF page extraction to PNG/JPEG.
-- **CloudConvert-Style Workflow:**
-  - Drag-and-drop batch queue with intelligent format auto-detection and clipboard paste (Ctrl+V) support.
-  - Per-file target format dropdown filtered by media category.
-  - Granular conversion settings: quality slider (1-100%), resolution presets (Original, 720p, 1080p, 4K, custom), and audio bitrates.
-  - Optional **"Merge images into single PDF"** toggle.
-  - One-click **"Download All as ZIP"** packaging via JSZip.
-- **Absolute Privacy & Zero Cost:**
-  - No files ever leave your device.
-  - No accounts, no paywalls, no daily limits.
-  - 60 FPS non-blocking UI powered by dedicated Web Workers.
+Pixshift converts images, video, audio, and PDFs directly inside your browser. No files are uploaded to any server because decoding, transcoding, resizing, EXIF stripping, and ZIP packaging execute locally on your device.
 
 ---
 
-## 🛠️ Tech Stack
+## Features
 
-- **Framework:** Next.js 15 (App Router), React 19, TypeScript
-- **Styling:** Tailwind CSS (Obsidian/Slate dark glassmorphic theme)
-- **Media Transcoding:** `@ffmpeg/ffmpeg` & `@ffmpeg/util` (WebAssembly)
-- **Document Engine:** `pdf-lib` & `pdfjs-dist`
-- **Image Processing:** HTML5 OffscreenCanvas, `heic2any`
-- **Archiving:** `jszip`
+- **Images:** Convert PNG, JPEG/JPG, WebP, AVIF (capability-gated), BMP (true 24-bit BI_RGB), ICO (real Vista+ PNG-in-ICO up to 256×256), HEIC/HEIF (`heic2any`), and single/multi-image PDF export (`pdf-lib`).
+- **Video & Audio:** Hardware-accelerated WebCodecs trim and compression via `mediabunny` (`mp4`, `webm`, `mov`) with automatic fallback to self-hosted `@ffmpeg/ffmpeg` WASM (`mp4`, `webm`, `mkv`, `avi`, `mov`, `gif`, `mp3`, `wav`, `ogg`, `aac`, `m4a`, `flac`).
+- **Documents:** Extract multi-page PDFs into PNG or JPEG images using self-hosted `pdfjs-dist` workers, or merge multiple images into one ordered PDF.
+- **Privacy & Controls:** Binary EXIF scanner/stripper (orientation-aware), before/after interactive Visual Diff Slider, NumberFlow byte-savings telemetry, custom dimensions with 10 resolution presets, queue thumbnails, recursive folder drop (`webkitdirectory`), and collision-safe ZIP archiving.
 
 ---
 
-## 🚀 Getting Started
+## Tech Stack
 
-### Local Development
+- **Framework:** Next.js 15 (App Router), React 19, TypeScript (`strict` + `noUncheckedIndexedAccess`)
+- **Styling:** Tailwind CSS 3 (`#0a0a0b` matte instrument chassis, `#c8f03c` acid lime, `#60a5fa` cobalt)
+- **Media & Documents:** `mediabunny`, `@ffmpeg/ffmpeg` + `@ffmpeg/core` (self-hosted), `pdf-lib`, `pdfjs-dist` (self-hosted worker), `heic2any`, `jszip`, `@number-flow/react`
+- **Quality Gate:** ESLint 9, Vitest, Playwright (against production `next start` with `COOP`/`COEP`)
 
-1. **Clone & Install Dependencies:**
+---
+
+## Getting Started
+
+1. **Install dependencies (automatically syncs self-hosted WASM/worker assets into `public/`):**
    ```bash
-   git clone https://github.com/vrsn001/pixshift.git
-   cd pixshift
    npm install
    ```
 
@@ -52,40 +35,25 @@ Pixshift is a universal, privacy-first file conversion studio that runs entirely
    ```bash
    npm run dev
    ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-3. **Production Build:**
+3. **Run Checks:**
    ```bash
+   npm run lint
+   npm run typecheck
+   npm test
    npm run build
-   npm run start
+   npm run test:e2e
    ```
 
 ---
 
-## 📦 Deployment on Vercel
+## Deployment on Vercel
 
-Pixshift is pre-configured for Vercel deployment with automatic `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` headers enabled in `next.config.ts` and `vercel.json` for multi-threaded WebAssembly:
-
-```json
-{
-  "framework": "nextjs",
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
-        { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" }
-      ]
-    }
-  ]
-}
-```
-
-Pushes to `main` automatically deploy to your connected Vercel project (`pixyshift`).
+Pixshift sets `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` in `next.config.ts` and `vercel.json` so all WASM/worker modules run same-origin under strict isolation. Pushes to `main` deploy to the `pixyshift` Vercel project (`https://pixyshift.vercel.app`).
 
 ---
 
-## 📄 License
+## License
 
 Licensed under the Apache 2.0 License.
-Built with ❤️ by [Laksh Rohilla](https://github.com/vrsn001).
+Built by [Laksh Rohilla](https://github.com/vrsn001).

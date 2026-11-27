@@ -9,7 +9,7 @@ export const FORMAT_REGISTRY: Record<SupportedFormat, FormatOption> = {
   bmp: { format: "bmp", label: "BMP", description: "Uncompressed bitmap raster format", category: "image" },
   ico: { format: "ico", label: "ICO", description: "Icon format for websites and apps", category: "image" },
   svg: { format: "svg", label: "SVG", description: "Vector graphic format", category: "image" },
-  
+
   mp4: { format: "mp4", label: "MP4", description: "Universally compatible H.264 video format", category: "video" },
   webm: { format: "webm", label: "WebM", description: "Open web video format (VP9 / Opus)", category: "video" },
   mkv: { format: "mkv", label: "MKV", description: "Matroska flexible container format", category: "video" },
@@ -31,7 +31,8 @@ export const AVAILABLE_TARGETS: Record<FileCategory, SupportedFormat[]> = {
   image: ["webp", "png", "jpeg", "avif", "bmp", "ico", "pdf"],
   video: ["mp4", "webm", "gif", "mp3", "wav", "mkv", "avi", "mov"],
   audio: ["mp3", "wav", "ogg", "aac", "m4a", "flac"],
-  document: ["png", "jpeg", "pdf"],
+  // Removed "pdf" from document targets — PDF extraction outputs PNG or JPEG pages
+  document: ["png", "jpeg"],
 };
 
 export const DEFAULT_TARGET_MAP: Record<FileCategory, SupportedFormat> = {

@@ -408,9 +408,15 @@ export async function selectFormatOnRow(
     .first();
   const activeTrigger = (await trigger.count()) > 0 ? trigger : fallbackTrigger;
   await activeTrigger.click();
-  const option = page.getByRole("button", {
-    name: new RegExp(`^${formatLabel}\\b`, "i"),
-  });
+  const option = page
+    .getByRole("option", {
+      name: new RegExp(`^${formatLabel}\\b`, "i"),
+    })
+    .or(
+      page.getByRole("button", {
+        name: new RegExp(`^${formatLabel}\\b`, "i"),
+      })
+    );
   await option.first().click();
 }
 

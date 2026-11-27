@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
@@ -20,9 +19,11 @@ export interface FixturePaths {
   folderEmptyPng: string;
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-export const DEFAULT_FIXTURES_DIR = path.join(__dirname, "generated");
+const fixturesBaseDir =
+  typeof __dirname !== "undefined"
+    ? __dirname
+    : path.join(process.cwd(), "tests", "fixtures");
+export const DEFAULT_FIXTURES_DIR = path.join(fixturesBaseDir, "generated");
 
 // Standard IEEE 802.3 CRC32 table for PNG chunk generation
 const CRC32_TABLE = (() => {
@@ -542,6 +543,19 @@ export async function ensureFixtures(
     folderEmptyPng: path.join(folderDropDir, "empty.png"),
   };
 
+  const writeIfNeeded = (filePath: string, data: Buffer) => {
+    try {
+      if (fs.existsSync(filePath) && fs.statSync(filePath).size === data.length) {
+        return;
+      }
+    } catch {
+      // proceed to write atomically
+    }
+    const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+    fs.writeFileSync(tmpPath, data);
+    fs.renameSync(tmpPath, filePath);
+  };
+
   // 16x16 opaque RGBA PNG
   const samplePngBuf = createPngBuffer(16, 16, (x, y) => [
     (x * 16) & 0xff,
@@ -549,7 +563,7 @@ export async function ensureFixtures(
     220,
     255,
   ]);
-  fs.writeFileSync(paths.samplePng, samplePngBuf);
+  writeIfNeeded(paths.samplePng, samplePngBuf);
 
   // 512x384 RGBA PNG with transparent outer border (for BMP white-matte + ICO 256x192 scale tests)
   const largePngBuf = createPngBuffer(512, 384, (x, y) => {
@@ -559,34 +573,34 @@ export async function ensureFixtures(
     }
     return [37, 99, 235, 255];
   });
-  fs.writeFileSync(paths.transparentLargePng, largePngBuf);
+  writeIfNeeded(paths.transparentLargePng, largePngBuf);
 
   // Valid minimal JPEGs with injected APP1 EXIF segment
-  fs.writeFileSync(paths.photoExifJpg, createExifJpegBuffer(16, 16, 1));
-  fs.writeFileSync(paths.photoExifRotatedJpg, createExifJpegBuffer(16, 8, 6));
+  writeIfNeeded(paths.photoExifJpg, createExifJpegBuffer(16, 16, 1));
+  writeIfNeeded(paths.photoExifRotatedJpg, createExifJpegBuffer(16, 8, 6));
 
   // Valid 2-page PDF
-  fs.writeFileSync(paths.sample2PagePdf, await createTwoPagePdfBuffer());
+  writeIfNeeded(paths.sample2PagePdf, await createTwoPagePdfBuffer());
 
   // Valid 0.25s 44.1kHz PCM WAV
-  fs.writeFileSync(paths.sampleWav, createWavBuffer(0.25, 44100, 440));
+  writeIfNeeded(paths.sampleWav, createWavBuffer(0.25, 44100, 440));
 
   // Genuine playable WebM/VP8 clip (~0.8s, 4 keyframes)
-  fs.writeFileSync(paths.sampleWebm, createWebmBuffer());
+  writeIfNeeded(paths.sampleWebm, createWebmBuffer());
 
   // Non-media unknown payload
-  fs.writeFileSync(
+  writeIfNeeded(
     paths.unknownXyz,
     Buffer.from("PIXSHIFT_UNSUPPORTED_FIXTURE_PAYLOAD_0001", "utf8")
   );
 
   // Folder drop fixtures: nested valid PNG + dotfile + 0-byte file
-  fs.writeFileSync(
+  writeIfNeeded(
     paths.folderNestedPng,
     createPngBuffer(8, 8, () => [200, 240, 60, 255])
   );
-  fs.writeFileSync(paths.folderDsStore, Buffer.from("Bud1", "ascii"));
-  fs.writeFileSync(paths.folderEmptyPng, Buffer.alloc(0));
+  writeIfNeeded(paths.folderDsStore, Buffer.from("Bud1", "ascii"));
+  writeIfNeeded(paths.folderEmptyPng, Buffer.alloc(0));
 
   return paths;
 }
@@ -595,7 +609,7 @@ const isCli =
   typeof process !== "undefined" &&
   Array.isArray(process.argv) &&
   typeof process.argv[1] === "string" &&
-  path.resolve(process.argv[1]) === path.resolve(__filename);
+  path.basename(process.argv[1]) === "generateFixtures.ts";
 
 if (isCli) {
   ensureFixtures()
