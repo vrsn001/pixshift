@@ -144,4 +144,4 @@ npm run test:e2e    # Playwright Chromium (19 E2E tests against `next start`)
 
 ## License
 
-Licensed under the Apache 2.0 License. Built by [Laksh Rohilla](https://github.com/vrsn001).
+Licensed under the Apache 2.0 License. Built by [Lakshay](https://github.com/vrsn001).
